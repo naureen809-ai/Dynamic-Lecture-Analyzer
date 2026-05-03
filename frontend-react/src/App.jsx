@@ -194,7 +194,10 @@ export default function App() {
       await loadHistory()
       await loadStats()
     } catch (err) {
-      setError(err?.response?.data?.message || err?.message || 'Failed to analyze lecture text.')
+      const networkMessage = err?.message === 'Network Error'
+        ? 'Network Error: could not reach the backend. Start the backend server and set VITE_BACKEND_URL to http://localhost:5001 if needed.'
+        : err?.response?.data?.message || err?.message || 'Failed to analyze lecture text.'
+      setError(networkMessage)
       setAnalysisResult(null)
     } finally {
       setLoading(false)
