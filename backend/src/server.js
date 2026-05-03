@@ -322,9 +322,12 @@ app.get('/api/history', authMiddleware, async (req, res) => {
   }
 });
 
-app.get('/api/stats', async (req, res) => {
+app.get('/api/stats', authMiddleware, async (req, res) => {
   try {
     const aggregate = await LectureHistory.aggregate([
+      {
+        $match: { userId: req.user._id }
+      },
       {
         $group: {
           _id: null,

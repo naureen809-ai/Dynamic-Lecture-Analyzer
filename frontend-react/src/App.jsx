@@ -393,111 +393,117 @@ export default function App() {
               <TopBar activeSection={activeSection} onNavigate={setActiveSection} onLogout={handleLogout} userName={authUser?.name} />
               <Sidebar activeSection={activeSection} setActiveSection={setActiveSection} onNewAnalysis={resetAnalysis} />
               <main className="md:ml-[280px] ml-0 p-gutter min-h-[calc(100vh-80px)]">
-        {activeSection === 'dashboard' && (
-          <DashboardSection
-            analysisResult={analysisResult}
-            stats={stats}
-            statsLoading={statsLoading}
-            statsError={statsError}
-          />
-        )}
+                {activeSection === 'dashboard' && (
+                  <DashboardSection
+                    analysisResult={analysisResult}
+                    stats={stats}
+                    statsLoading={statsLoading}
+                    statsError={statsError}
+                  />
+                )}
 
-        {activeSection === 'chat' && <ChatSection />}
+                {activeSection === 'chat' && <ChatSection />}
 
-        {activeSection === 'reports' && (
-          <ReportsSection
-            analysisResult={analysisResult}
-            onCopy={handleCopy}
-            copied={copiedKey === fullReportText}
-            onExportPdf={handleExportPdf}
-            exportId={exportDocumentId}
-          />
-        )}
+                {activeSection === 'reports' && (
+                  <ReportsSection
+                    analysisResult={analysisResult}
+                    onCopy={handleCopy}
+                    copied={copiedKey === fullReportText}
+                    onExportPdf={handleExportPdf}
+                    exportId={exportDocumentId}
+                  />
+                )}
 
-        {activeSection === 'analysis-input' && (
-          <InputSection
-            text={text}
-            language={language}
-            onTextChange={setText}
-            onLanguageChange={setLanguage}
-            onAnalyze={handleAnalyze}
-            onDownload={() => {
-              const reportText = [
-                'Lecture Summary',
-                analysisResult?.summary || 'No summary available.',
-                'Topics',
-                ...(analysisResult?.topics || []),
-                'Action Items',
-                ...(analysisResult?.action_items || []),
-                'Keywords',
-                ...(analysisResult?.keywords || []),
-                'Speaker Feedback',
-                analysisResult?.speaker_feedback || 'No feedback available.'
-              ].join('\n\n')
-              const blob = new Blob([reportText], { type: 'text/plain;charset=utf-8' })
-              const url = URL.createObjectURL(blob)
-              const anchor = document.createElement('a')
-              anchor.href = url
-              anchor.download = `lecture-analysis-${new Date().toISOString().replace(/[:.]/g, '-')}.txt`
-              document.body.appendChild(anchor)
-              anchor.click()
-              document.body.removeChild(anchor)
-              URL.revokeObjectURL(url)
-            }}
-            loading={loading}
-            error={error}
-            canAnalyze={canAnalyze}
-            canDownload={canDownload}
-          />
-        )}
+                {activeSection === 'analysis-input' && (
+                  <InputSection
+                    text={text}
+                    language={language}
+                    onTextChange={setText}
+                    onLanguageChange={setLanguage}
+                    onAnalyze={handleAnalyze}
+                    onDownload={() => {
+                      const reportText = [
+                        'Lecture Summary',
+                        analysisResult?.summary || 'No summary available.',
+                        'Topics',
+                        ...(analysisResult?.topics || []),
+                        'Action Items',
+                        ...(analysisResult?.action_items || []),
+                        'Keywords',
+                        ...(analysisResult?.keywords || []),
+                        'Speaker Feedback',
+                        analysisResult?.speaker_feedback || 'No feedback available.'
+                      ].join('\n\n')
+                      const blob = new Blob([reportText], { type: 'text/plain;charset=utf-8' })
+                      const url = URL.createObjectURL(blob)
+                      const anchor = document.createElement('a')
+                      anchor.href = url
+                      anchor.download = `lecture-analysis-${new Date().toISOString().replace(/[:.]/g, '-')}.txt`
+                      document.body.appendChild(anchor)
+                      anchor.click()
+                      document.body.removeChild(anchor)
+                      URL.revokeObjectURL(url)
+                    }}
+                    loading={loading}
+                    error={error}
+                    canAnalyze={canAnalyze}
+                    canDownload={canDownload}
+                  />
+                )}
 
-        {activeSection === 'analysis-summary' && (
-          <SummarySection
-            analysisResult={analysisResult}
-            onCopy={handleCopy}
-            copied={copiedKey === analysisResult?.summary}
-          />
-        )}
+                {activeSection === 'analysis-summary' && (
+                  <SummarySection
+                    analysisResult={analysisResult}
+                    onCopy={handleCopy}
+                    copied={copiedKey === analysisResult?.summary}
+                  />
+                )}
 
-        {activeSection === 'analysis-topics' && (
-          <TopicsSection
-            analysisResult={analysisResult}
-            onCopy={handleCopy}
-            copied={copiedKey === (analysisResult?.topics || []).join('\n')}
-          />
-        )}
+                {activeSection === 'analysis-topics' && (
+                  <TopicsSection
+                    analysisResult={analysisResult}
+                    onCopy={handleCopy}
+                    copied={copiedKey === (analysisResult?.topics || []).join('\n')}
+                  />
+                )}
 
-        {activeSection === 'analysis-actions' && (
-          <ActionPlanSection
-            analysisResult={analysisResult}
-            onCopy={handleCopy}
-            copied={copiedKey === (analysisResult?.action_items || []).join('\n')}
-          />
-        )}
+                {activeSection === 'analysis-actions' && (
+                  <ActionPlanSection
+                    analysisResult={analysisResult}
+                    onCopy={handleCopy}
+                    copied={copiedKey === (analysisResult?.action_items || []).join('\n')}
+                  />
+                )}
 
-        {activeSection === 'analysis-keywords' && (
-          <KeywordsSection
-            analysisResult={analysisResult}
-            onCopy={handleCopy}
-            copied={copiedKey === (analysisResult?.keywords || []).join(', ')}
-          />
-        )}
+                {activeSection === 'analysis-keywords' && (
+                  <KeywordsSection
+                    analysisResult={analysisResult}
+                    onCopy={handleCopy}
+                    copied={copiedKey === (analysisResult?.keywords || []).join(', ')}
+                  />
+                )}
 
-        {activeSection === 'analysis-history' && (
-          <HistorySection
-            history={history}
-            historyLoading={historyLoading}
-            historyError={historyError}
-            searchResults={searchResults}
-            searchLoading={searchLoading}
-            searchError={searchError}
-            onSearch={handleSearch}
-            onRefreshHistory={loadHistory}
-            onSelectHistory={handleSelectHistory}
-            onExportPdf={handleExportPdf}
-          />
-        )}
-      </main>
-    </div>
+                {activeSection === 'analysis-history' && (
+                  <HistorySection
+                    history={history}
+                    historyLoading={historyLoading}
+                    historyError={historyError}
+                    searchResults={searchResults}
+                    searchLoading={searchLoading}
+                    searchError={searchError}
+                    onSearch={handleSearch}
+                    onRefreshHistory={loadHistory}
+                    onSelectHistory={handleSelectHistory}
+                    onExportPdf={handleExportPdf}
+                  />
+                )}
+              </main>
+            </div>
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
+      />
+    </Routes>
   )
 }
