@@ -1,47 +1,49 @@
-# Deployment Guide — Free Hosting (Vercel frontend, Render backend, MongoDB Atlas)
+# Deployment Guide - Free Hosting (Vercel frontend, Render backend, MongoDB Atlas)
 
 Overview:
 - Frontend: React + Vite + Tailwind (deploy to Vercel)
 - Backend: Node.js + Express (deploy to Render)
 - Database: MongoDB Atlas (free tier)
 
-Steps (summary):
-1. Push the `project` folder to a GitHub repository.
-2. Create a MongoDB Atlas free cluster and get the `MONGODB_URI` connection string.
-3. Deploy backend to Render:
-   - Connect the GitHub repo, select `project/backend` as the service, set build command `npm install` and start command `npm start`.
-   - Set environment variables on Render: `MONGODB_URI`, `OPENAI_API_KEY` (optional), `CLIENT_ORIGIN` (your Vercel URL or `*` for testing).
-4. Deploy frontend to Vercel:
-   - Connect the GitHub repo, select `project/frontend-react` as the root. Set `VITE_BACKEND_URL` in Vercel env to the Render backend URL.
+Steps:
+1. Push the `project` folder to GitHub.
+2. Create a free MongoDB Atlas cluster and copy the `MONGODB_URI`.
+3. Deploy the backend to Render with `project/backend` as the service root.
+4. Deploy the frontend to Vercel with `project` as the root so the root `vercel.json` is used.
 
-Detailed commands (local):
-
-Create GitHub repo and push:
-```bash
-git init
-git add project
-git commit -m "Initial project"
-gh repo create my-dla --public --source=.
-git push --set-upstream origin main
-```
-
-MongoDB Atlas:
-- Sign up at https://www.mongodb.com/cloud/atlas and create a free cluster.
-- Create a database user and allow your IP or 0.0.0.0/0 for testing.
-- Get the connection string and set it as `MONGODB_URI` on Render.
-
-Render backend settings:
+Backend on Render:
 - Build command: `npm install`
 - Start command: `npm start`
-- Root: `project/backend`
-- Add env vars: `MONGODB_URI`, `OPENAI_API_KEY` (optional), `CLIENT_ORIGIN` (set your Vercel URL)
+- Env vars:
+  - `MONGODB_URI`
+  - `OPENAI_API_KEY` if you want real OpenAI responses
+  - `OPENAI_MODEL` if you want a custom model name
+  - `CLIENT_ORIGIN=https://dynamic-lecture-analyzer.vercel.app`
 
-Vercel frontend settings:
-- Root: `project/frontend-react`
-- Build command: `npm run build`
-- Output directory: `dist`
-- Add env var: `VITE_BACKEND_URL` pointing to your Render service URL (e.g., `https://your-backend.onrender.com`)
+Frontend on Vercel:
+- Root: `project`
+- Build output: `frontend-react/dist`
+- Env var: `VITE_BACKEND_URL=https://dynamic-lecture-analyzer.onrender.com`
+
+Local test commands:
+
+```powershell
+cd "f:\Dynamic Lecture Analyzer\project\backend"
+npm install
+npm run dev
+```
+
+```powershell
+cd "f:\Dynamic Lecture Analyzer\project\frontend-react"
+npm install
+npm run dev
+```
+
+MongoDB Atlas setup:
+- Create a database user.
+- Allow your IP or `0.0.0.0/0` for testing.
+- Paste the connection string into `MONGODB_URI` on Render.
 
 Notes:
-- If you want to keep the Streamlit app, use Streamlit Cloud or Render for that instead — Vercel is suited for React/Next/static frontends.
-- For production OpenAI usage, add `OPENAI_API_KEY` in Render env.
+- The backend accepts requests from localhost and from `https://dynamic-lecture-analyzer.vercel.app`.
+- The React frontend is now the production Vercel app. The old Streamlit route is no longer used for deployment.

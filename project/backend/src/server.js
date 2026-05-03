@@ -8,11 +8,27 @@ dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 5001;
-const clientOrigin = process.env.CLIENT_ORIGIN || 'http://localhost:8501';
+const allowedOrigins = (process.env.CLIENT_ORIGIN || '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const defaultOrigins = [
+  'http://localhost:8501',
+  'http://localhost:5173',
+  'https://dynamic-lecture-analyzer.vercel.app',
+];
+
+const corsOrigins = allowedOrigins.length > 0 ? allowedOrigins : defaultOrigins;
 
 connectDB();
 
-app.use(cors({ origin: clientOrigin }));
+app.use(
+  cors({
+    origin: corsOrigins,
+    credentials: true,
+  })
+);
 app.use(express.json());
 
 app.get('/health', (req, res) => {
