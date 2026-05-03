@@ -32,6 +32,7 @@ npm run dev
 
 Backend Render:
 - `MONGODB_URI`
+- `JWT_SECRET`
 - `CLIENT_ORIGIN=https://dynamic-lecture-analyzer.vercel.app`
 - `OPENAI_API_KEY`
 - `OPENAI_MODEL`
