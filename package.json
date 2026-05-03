@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "scripts": {
-    "build": "npm install --prefix frontend-react && npm run build --prefix frontend-react"
+    "build": "npm ci --prefix frontend-react && npm run build --prefix frontend-react"
   },
   "dependencies": {
     "groq-sdk": "^1.1.2"
