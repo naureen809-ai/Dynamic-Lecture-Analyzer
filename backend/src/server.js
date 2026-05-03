@@ -24,7 +24,10 @@ const defaultOrigins = [
   'https://dynamic-lecture-analyzer.vercel.app'
 ];
 
-const corsOrigins = allowedOrigins.length > 0 ? allowedOrigins : defaultOrigins;
+const corsOptions = {
+  origin: allowedOrigins.length > 0 ? allowedOrigins : true,
+  credentials: true
+};
 
 const lectureHistorySchema = new mongoose.Schema(
   {
@@ -108,12 +111,7 @@ const flattenKeywords = (entry) => {
 
 connectDB();
 
-app.use(
-  cors({
-    origin: corsOrigins,
-    credentials: true
-  })
-);
+app.use(cors(corsOptions));
 app.use(express.json({ limit: '2mb' }));
 
 app.get('/', (req, res) => {
@@ -254,13 +252,6 @@ app.post('/api/chat', async (req, res) => {
       language,
       history
     });
-
-    if (chat?.moderated) {
-      return res.status(400).json({
-        success: false,
-        message: chat.response
-      });
-    }
 
     return res.status(200).json({
       success: true,

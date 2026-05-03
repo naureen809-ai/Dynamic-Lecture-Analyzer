@@ -240,13 +240,13 @@ export default function App() {
     }
   }
 
-  function handleCopy(value) {
+  async function handleCopy(value) {
     const payload = String(value || '').trim()
     if (!payload) return
 
     try {
       if (navigator?.clipboard?.writeText) {
-        navigator.clipboard.writeText(payload)
+        await navigator.clipboard.writeText(payload)
       }
       setCopiedKey(payload)
       setTimeout(() => setCopiedKey(''), 1400)
@@ -271,6 +271,47 @@ export default function App() {
 
   const exportDocumentId = analysisResult?.id || analysisResult?.document_id || analysisResult?.documentId || null
 
+  const buildReportText = (analysis) => {
+    const safe = analysis || EMPTY_RESULT
+    return [
+      'Dynamic Lecture Analyzer Report',
+      '',
+      'Summary',
+      safe.summary || 'No summary available.',
+      '',
+      'Topics',
+      ...(safe.topics || []),
+      '',
+      'Action Items',
+      ...(safe.action_items || []),
+      '',
+      'Keywords',
+      (safe.keywords || []).join(', '),
+      '',
+      'Speaker Feedback',
+      safe.speaker_feedback || 'No speaker feedback available.',
+      '',
+      'Short Notes',
+      ...(safe.notes?.short_notes || []),
+      '',
+      'Detailed Notes',
+      ...(safe.notes?.detailed_notes || []),
+      '',
+      'MCQs',
+      ...(safe.questions?.mcqs || []).map((question) => question.question || ''),
+      '',
+      'Short Questions',
+      ...(safe.questions?.short_questions || []),
+      '',
+      'Viva Questions',
+      ...(safe.questions?.viva_questions || [])
+    ]
+      .filter((line) => line !== null && line !== undefined)
+      .join('\n')
+  }
+
+  const fullReportText = buildReportText(analysisResult)
+
   return (
     <div className="app-root min-h-screen">
       <Sidebar activeSection={activeSection} setActiveSection={setActiveSection} onNewAnalysis={resetAnalysis} />
@@ -291,7 +332,7 @@ export default function App() {
           <ReportsSection
             analysisResult={analysisResult}
             onCopy={handleCopy}
-            copied={copiedKey === 'full-report'}
+            copied={copiedKey === fullReportText}
             onExportPdf={handleExportPdf}
             exportId={exportDocumentId}
           />
