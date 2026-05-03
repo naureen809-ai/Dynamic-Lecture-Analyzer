@@ -18,19 +18,19 @@ Set these on your hosting provider:
 
 ## Backend Hosting Steps
 
-1. Push `project/backend` to GitHub.
+1. Push the repo to GitHub.
 2. Create a new Web Service on Render or Railway.
-3. Point it to the backend folder.
+3. Point it to the `backend` folder.
 4. Build command: `npm install`
 5. Start command: `npm start`
 6. Add the environment variables above.
 
 ## Frontend Hosting Steps
 
-1. Push `project/frontend-react` to GitHub.
+1. Push the repo to GitHub.
 2. Deploy on Vercel as a React/Vite app.
 3. Set `VITE_BACKEND_URL` to the backend URL.
-4. Build command: handled by `project/vercel.json`
+4. Build command: handled by `vercel.json`
 
 ## Vercel Notes
 

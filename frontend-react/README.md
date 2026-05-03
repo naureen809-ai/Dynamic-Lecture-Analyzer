@@ -3,7 +3,7 @@
 Run locally:
 
 ```bash
-cd project/frontend-react
+cd frontend-react
 npm install
 npm run dev
 ```

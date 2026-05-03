@@ -6,10 +6,10 @@ Overview:
 - Database: MongoDB Atlas (free tier)
 
 Steps:
-1. Push the `project` folder to GitHub.
+1. Push the repo to GitHub.
 2. Create a free MongoDB Atlas cluster and copy the `MONGODB_URI`.
-3. Deploy the backend to Render with `project/backend` as the service root.
-4. Deploy the frontend to Vercel with `project` as the root so the root `vercel.json` is used.
+3. Deploy the backend to Render with `backend` as the service root.
+4. Deploy the frontend to Vercel with the repo root so the root `vercel.json` is used.
 
 Backend on Render:
 - Build command: `npm install`

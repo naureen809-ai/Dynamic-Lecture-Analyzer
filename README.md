@@ -1,8 +1,8 @@
 # Dynamic Lecture Analyzer
 
 Production-ready setup:
-- Frontend: React + Vite + Tailwind in `project/frontend-react`
-- Backend: Express + MongoDB + OpenAI in `project/backend`
+- Frontend: React + Vite + Tailwind in `frontend-react`
+- Backend: Express + MongoDB + OpenAI in `backend`
 - Deployment: Vercel frontend, Render backend, MongoDB Atlas database
 
 ## Quick start
