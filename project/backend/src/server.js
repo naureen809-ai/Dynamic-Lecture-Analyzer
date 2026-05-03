@@ -31,6 +31,15 @@ app.use(
 );
 app.use(express.json());
 
+app.get('/', (req, res) => {
+  res.json({
+    ok: true,
+    service: 'dynamic-lecture-analyzer-backend',
+    health: '/health',
+    analyze: '/api/analyze',
+  });
+});
+
 app.get('/health', (req, res) => {
   res.json({ ok: true, service: 'dynamic-lecture-analyzer-backend' });
 });
