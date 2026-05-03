@@ -4,6 +4,8 @@ const dotenv = require('dotenv');
 const mongoose = require('mongoose');
 const PDFDocument = require('pdfkit');
 const connectDB = require('./config/db');
+const authRoutes = require('./routes/authRoute');
+const authMiddleware = require('./middleware/authMiddleware');
 const { analyzeLectureText, chatWithLectureAssistant } = require('./services/aiService');
 
 dotenv.config();
@@ -56,6 +58,7 @@ const corsOptions = {
 
 const lectureHistorySchema = new mongoose.Schema(
   {
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     input_text: { type: String, required: true, trim: true },
     language: { type: String, default: 'English' },
     ai_output: {
@@ -101,6 +104,7 @@ const lectureHistorySchema = new mongoose.Schema(
       analysisProvider: { type: String, default: '' },
       analysisModel: { type: String, default: '' }
     },
+    createdAt: { type: Date, default: Date.now },
     timestamp: { type: Date, default: Date.now }
   },
   {
@@ -138,6 +142,7 @@ connectDB();
 
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '2mb' }));
+app.use('/api/auth', authRoutes);
 
 app.get('/', (req, res) => {
   res.json({
@@ -157,7 +162,7 @@ app.get('/health', (req, res) => {
   res.json({ ok: true, service: 'dynamic-lecture-analyzer-backend' });
 });
 
-app.post('/api/analyze', async (req, res) => {
+app.post('/api/analyze', authMiddleware, async (req, res) => {
   try {
     const rawText = req.body?.text;
     const language = normalizeLanguage(req.body?.language);
@@ -195,46 +200,49 @@ app.post('/api/analyze', async (req, res) => {
     }
 
     const saved = await LectureHistory.create({
+      userId: req.user._id,
       input_text: text,
       language,
       ai_output: {
-        summary: aiOutput.summary,
-        topics: Array.isArray(aiOutput.topics) ? aiOutput.topics : [],
-        action_items: Array.isArray(aiOutput.action_items) ? aiOutput.action_items : [],
-        keywords: Array.isArray(aiOutput.keywords) ? aiOutput.keywords : [],
-        speaker_feedback: aiOutput.speaker_feedback || '',
-        notes: {
-            headings: Array.isArray(aiOutput.notes?.headings)
-              ? aiOutput.notes.headings.map((item) => ({
-                title: String(item?.title || ''),
-                points: Array.isArray(item?.points) ? item.points : [],
-                important_lines: Array.isArray(item?.important_lines) ? item.important_lines : []
-              }))
-              : [],
-          short_notes: Array.isArray(aiOutput.notes?.short_notes) ? aiOutput.notes.short_notes : [],
-          detailed_notes: Array.isArray(aiOutput.notes?.detailed_notes) ? aiOutput.notes.detailed_notes : [],
-          timestamps: Array.isArray(aiOutput.notes?.timestamps) ? aiOutput.notes.timestamps : []
-        },
-        questions: {
-          mcqs: Array.isArray(aiOutput.questions?.mcqs) ? aiOutput.questions.mcqs : [],
-          short_questions: Array.isArray(aiOutput.questions?.short_questions) ? aiOutput.questions.short_questions : [],
-          viva_questions: Array.isArray(aiOutput.questions?.viva_questions) ? aiOutput.questions.viva_questions : []
-        },
-          segmentation: Array.isArray(aiOutput.segmentation)
-            ? aiOutput.segmentation.map((item) => ({
-              section: String(item?.section || ''),
-              content: String(item?.content || item?.description || ''),
-              description: String(item?.description || item?.content || ''),
-              ...(item?.timestamp ? { timestamp: String(item.timestamp) } : {})
-            }))
-            : [],
-        keyPoints: Array.isArray(aiOutput.keyPoints) ? aiOutput.keyPoints : [],
-        explanation: String(aiOutput.explanation || ''),
-        sentiment: String(aiOutput.sentiment || 'Neutral'),
-        readabilityScore: Number(aiOutput.readabilityScore || 0),
-        analysisProvider: String(aiOutput.analysisProvider || ''),
-        analysisModel: String(aiOutput.analysisModel || '')
+        ...aiOutput
       },
+      summary: aiOutput.summary,
+      topics: Array.isArray(aiOutput.topics) ? aiOutput.topics : [],
+      action_items: Array.isArray(aiOutput.action_items) ? aiOutput.action_items : [],
+      keywords: Array.isArray(aiOutput.keywords) ? aiOutput.keywords : [],
+      speaker_feedback: aiOutput.speaker_feedback || '',
+      notes: {
+        headings: Array.isArray(aiOutput.notes?.headings)
+          ? aiOutput.notes.headings.map((item) => ({
+              title: String(item?.title || ''),
+              points: Array.isArray(item?.points) ? item.points : [],
+              important_lines: Array.isArray(item?.important_lines) ? item.important_lines : []
+            }))
+          : [],
+        short_notes: Array.isArray(aiOutput.notes?.short_notes) ? aiOutput.notes.short_notes : [],
+        detailed_notes: Array.isArray(aiOutput.notes?.detailed_notes) ? aiOutput.notes.detailed_notes : [],
+        timestamps: Array.isArray(aiOutput.notes?.timestamps) ? aiOutput.notes.timestamps : []
+      },
+      questions: {
+        mcqs: Array.isArray(aiOutput.questions?.mcqs) ? aiOutput.questions.mcqs : [],
+        short_questions: Array.isArray(aiOutput.questions?.short_questions) ? aiOutput.questions.short_questions : [],
+        viva_questions: Array.isArray(aiOutput.questions?.viva_questions) ? aiOutput.questions.viva_questions : []
+      },
+      segmentation: Array.isArray(aiOutput.segmentation)
+        ? aiOutput.segmentation.map((item) => ({
+            section: String(item?.section || ''),
+            content: String(item?.content || item?.description || ''),
+            description: String(item?.description || item?.content || ''),
+            ...(item?.timestamp ? { timestamp: String(item.timestamp) } : {})
+          }))
+        : [],
+      keyPoints: Array.isArray(aiOutput.keyPoints) ? aiOutput.keyPoints : [],
+      explanation: String(aiOutput.explanation || ''),
+      sentiment: String(aiOutput.sentiment || 'Neutral'),
+      readabilityScore: Number(aiOutput.readabilityScore || 0),
+      analysisProvider: String(aiOutput.analysisProvider || ''),
+      analysisModel: String(aiOutput.analysisModel || ''),
+      createdAt: new Date(),
       timestamp: new Date()
     });
 
@@ -291,11 +299,11 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
-app.get('/api/history', async (req, res) => {
+app.get('/api/history', authMiddleware, async (req, res) => {
   try {
     const limit = parseLimit(req.query.limit, 20, 100);
 
-    const history = await LectureHistory.find({})
+    const history = await LectureHistory.find({ userId: req.user._id })
       .sort({ timestamp: -1 })
       .limit(limit)
       .lean();

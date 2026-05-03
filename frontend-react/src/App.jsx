@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import apiClient from './api/apiClient'
 import Sidebar from './components/Sidebar'
 import InputSection from './components/InputSection'
@@ -10,6 +11,8 @@ import HistorySection from './components/HistorySection'
 import ReportsSection from './components/ReportsSection'
 import DashboardSection from './components/DashboardSection'
 import ChatSection from './components/ChatSection'
+import LoginPage from './pages/LoginPage'
+import RegisterPage from './pages/RegisterPage'
 import './styles/index.css'
 
 const topNavItems = [
@@ -18,7 +21,7 @@ const topNavItems = [
   { id: 'reports', label: 'Reports' }
 ]
 
-function TopBar({ activeSection, onNavigate }) {
+function TopBar({ activeSection, onNavigate, onLogout, userName }) {
   return (
     <header className="app-topbar sticky top-0 z-40 md:ml-[280px] ml-0 h-20 flex items-center justify-between px-8 bg-slate-950/90 backdrop-blur-xl border-b border-white/5">
       <div className="flex items-center gap-8">
@@ -53,13 +56,20 @@ function TopBar({ activeSection, onNavigate }) {
         <button className="icon-button" type="button" aria-label="Settings">
           <span className="material-symbols-outlined">settings</span>
         </button>
-        <div className="ml-4 pl-4 border-l border-white/10 flex items-center gap-3">
-          <img
-            alt="Administrator profile"
-            className="w-8 h-8 rounded-lg object-cover border border-white/10"
-            src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=96&h=96&fit=crop&crop=faces"
-          />
-        </div>
+        {userName && (
+          <div className="ml-4 pl-4 border-l border-white/10 flex items-center gap-3">
+            <div>
+              <p className="text-sm font-semibold text-white">{userName}</p>
+              <button
+                type="button"
+                onClick={onLogout}
+                className="text-xs uppercase tracking-[0.28em] text-slate-400 hover:text-white"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </header>
   )
@@ -125,8 +135,18 @@ export default function App() {
   const [searchLoading, setSearchLoading] = useState(false)
   const [searchError, setSearchError] = useState('')
   const [copiedKey, setCopiedKey] = useState('')
+  const [authToken, setAuthToken] = useState(() => localStorage.getItem('AUTH_TOKEN') || '')
+  const [authUser, setAuthUser] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('AUTH_USER') || 'null')
+    } catch {
+      return null
+    }
+  })
 
-  const canAnalyze = useMemo(() => text.trim().length > 0 && !loading, [text, loading])
+  const isAuthenticated = Boolean(authToken && authUser)
+
+  const canAnalyze = useMemo(() => text.trim().length > 0 && !loading && isAuthenticated, [text, loading, isAuthenticated])
   const canDownload = useMemo(() => {
     return Boolean(
       analysisResult && (
@@ -142,9 +162,11 @@ export default function App() {
   const currentResult = analysisResult || EMPTY_RESULT
 
   useEffect(() => {
-    loadStats()
-    loadHistory()
-  }, [])
+    if (isAuthenticated) {
+      loadStats()
+      loadHistory()
+    }
+  }, [isAuthenticated])
 
   useEffect(() => {
     if (activeSection === 'analysis-history') {
@@ -153,6 +175,8 @@ export default function App() {
   }, [activeSection])
 
   async function loadStats() {
+    if (!isAuthenticated) return
+
     setStatsLoading(true)
     setStatsError('')
 
@@ -167,6 +191,8 @@ export default function App() {
   }
 
   async function loadHistory() {
+    if (!isAuthenticated) return
+
     setHistoryLoading(true)
     setHistoryError('')
 
@@ -270,6 +296,23 @@ export default function App() {
     setActiveSection('analysis-summary')
   }
 
+  function handleAuthSuccess({ token, user }) {
+    localStorage.setItem('AUTH_TOKEN', token)
+    localStorage.setItem('AUTH_USER', JSON.stringify(user))
+    setAuthToken(token)
+    setAuthUser(user)
+  }
+
+  function handleLogout() {
+    localStorage.removeItem('AUTH_TOKEN')
+    localStorage.removeItem('AUTH_USER')
+    setAuthToken('')
+    setAuthUser(null)
+    setAnalysisResult(null)
+    setHistory([])
+    setStats({ total_lectures_processed: 0, total_questions_generated: 0 })
+  }
+
   function resetAnalysis() {
     setText('')
     setAnalysisResult(null)
@@ -321,10 +364,35 @@ export default function App() {
   const fullReportText = buildReportText(analysisResult)
 
   return (
-    <div className="app-root min-h-screen">
-      <TopBar activeSection={activeSection} onNavigate={setActiveSection} />
-      <Sidebar activeSection={activeSection} setActiveSection={setActiveSection} onNewAnalysis={resetAnalysis} />
-      <main className="md:ml-[280px] ml-0 p-gutter min-h-[calc(100vh-80px)]">
+    <Routes>
+      <Route
+        path="/login"
+        element={
+          isAuthenticated ? (
+            <Navigate to="/" replace />
+          ) : (
+            <LoginPage onLogin={handleAuthSuccess} />
+          )
+        }
+      />
+      <Route
+        path="/register"
+        element={
+          isAuthenticated ? (
+            <Navigate to="/" replace />
+          ) : (
+            <RegisterPage onRegister={handleAuthSuccess} />
+          )
+        }
+      />
+      <Route
+        path="/*"
+        element={
+          isAuthenticated ? (
+            <div className="app-root min-h-screen">
+              <TopBar activeSection={activeSection} onNavigate={setActiveSection} onLogout={handleLogout} userName={authUser?.name} />
+              <Sidebar activeSection={activeSection} setActiveSection={setActiveSection} onNewAnalysis={resetAnalysis} />
+              <main className="md:ml-[280px] ml-0 p-gutter min-h-[calc(100vh-80px)]">
         {activeSection === 'dashboard' && (
           <DashboardSection
             analysisResult={analysisResult}
