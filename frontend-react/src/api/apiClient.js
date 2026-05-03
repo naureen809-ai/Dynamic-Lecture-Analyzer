@@ -1,9 +1,11 @@
 import axios from 'axios'
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5001'
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL
+
+const defaultBackend = BACKEND_URL || 'https://dynamic-lecture-analyzer.onrender.com'
 
 const client = axios.create({
-  baseURL: BACKEND_URL,
+  baseURL: defaultBackend,
   timeout: 60000
 })
 

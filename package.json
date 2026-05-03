@@ -3,7 +3,8 @@
   "private": true,
   "version": "1.0.0",
   "scripts": {
-    "build": "npm ci --prefix frontend-react && npm run build --prefix frontend-react && node ./copy-dist.js"
+    "build": "npm ci --prefix frontend-react && npm run build --prefix frontend-react && node ./copy-dist.js",
+    "vercel-build": "npm run build"
   },
   "dependencies": {
     "groq-sdk": "^1.1.2"
