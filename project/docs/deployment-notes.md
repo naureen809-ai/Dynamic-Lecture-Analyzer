@@ -27,16 +27,12 @@ Set these on your hosting provider:
 
 ## Frontend Hosting Steps
 
-1. Push `project/frontend` to GitHub.
-2. Deploy on Streamlit Community Cloud or Render.
-3. Set `BACKEND_URL` to the backend URL.
-4. Start command: `streamlit run app.py`
+1. Push `project/frontend-react` to GitHub.
+2. Deploy on Vercel as a React/Vite app.
+3. Set `VITE_BACKEND_URL` to the backend URL.
+4. Build command: handled by `project/vercel.json`
 
-## Vercel Limitation
+## Vercel Notes
 
-Streamlit is a long-running Python app. Vercel is better for serverless or static apps, so a full Streamlit deployment is usually unstable there.
-
-## If You Still Want Vercel
-
-- Use Vercel for a static landing page only.
-- Keep the Streamlit app on a Python-friendly host.
+- Vercel is now the correct host for the React frontend.
+- The old Streamlit frontend is no longer part of this deployment.

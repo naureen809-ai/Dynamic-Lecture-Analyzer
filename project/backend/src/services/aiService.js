@@ -1,18 +1,33 @@
 const OpenAI = require('openai');
+const Groq = require('groq-sdk');
 
-let client = null;
+let openaiClient = null;
+let groqClient = null;
 
-const getClient = () => {
+const getOpenAIClient = () => {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     return null;
   }
 
-  if (!client) {
-    client = new OpenAI({ apiKey });
+  if (!openaiClient) {
+    openaiClient = new OpenAI({ apiKey });
   }
 
-  return client;
+  return openaiClient;
+};
+
+const getGroqClient = () => {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) {
+    return null;
+  }
+
+  if (!groqClient) {
+    groqClient = new Groq({ apiKey });
+  }
+
+  return groqClient;
 };
 
 const splitSentences = (text) => {
@@ -90,14 +105,21 @@ const analyzeLectureText = async (text) => {
     throw new Error('text is required');
   }
 
-  const openai = getClient();
-  if (!openai) {
+  const groq = getGroqClient();
+  const openai = getOpenAIClient();
+
+  if (!groq && !openai) {
     return buildLocalAnalysis(cleanText);
   }
 
   try {
-    const response = await openai.chat.completions.create({
-      model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+    const provider = groq ? 'groq' : 'openai';
+    const model = groq
+      ? process.env.GROQ_MODEL || 'llama3-8b-8192'
+      : process.env.OPENAI_MODEL || 'gpt-4o-mini';
+
+    const requestParams = {
+      model,
       temperature: 0.2,
       response_format: { type: 'json_object' },
       messages: [
@@ -125,8 +147,9 @@ const analyzeLectureText = async (text) => {
           ].join('\n')
         }
       ]
-    });
+    };
 
+    const response = await (groq ? groq.chat.completions.create(requestParams) : openai.chat.completions.create(requestParams));
     const rawContent = response.choices?.[0]?.message?.content || '';
     const parsed = JSON.parse(rawContent);
 
@@ -141,8 +164,10 @@ const analyzeLectureText = async (text) => {
       readabilityScore: typeof parsed.readabilityScore === 'number'
         ? Number(Math.max(0, Math.min(100, parsed.readabilityScore)).toFixed(2))
         : calculateReadabilityScore(cleanText),
-      analysisProvider: 'openai',
-      analysisModel: process.env.OPENAI_MODEL || 'gpt-4o-mini'
+      analysisProvider: groq ? 'groq' : 'openai',
+      analysisModel: groq
+        ? process.env.GROQ_MODEL || 'llama3-8b-8192'
+        : process.env.OPENAI_MODEL || 'gpt-4o-mini'
     };
   } catch (error) {
     console.warn('OpenAI analysis failed, using local fallback:', error.message);
