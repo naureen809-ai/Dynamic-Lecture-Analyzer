@@ -1,7 +1,32 @@
 import React, { useMemo, useState } from 'react'
 import apiClient from '../api/apiClient'
 
-const LANGUAGES = ['English', 'Hindi', 'Hinglish']
+const LANGUAGES = [
+  'English',
+  'Hindi',
+  'Hinglish',
+  'Bengali',
+  'Tamil',
+  'Telugu',
+  'Marathi',
+  'Gujarati',
+  'Punjabi',
+  'Urdu',
+  'Kannada',
+  'Malayalam',
+  'Odia',
+  'Assamese',
+  'Sanskrit',
+  'Konkani',
+  'Maithili',
+  'Dogri',
+  'Manipuri',
+  'Bodo',
+  'Santhali',
+  'Kashmiri',
+  'Sindhi',
+  'Nepali'
+]
 
 function MessageBubble({ role, content }) {
   const isUser = role === 'user'

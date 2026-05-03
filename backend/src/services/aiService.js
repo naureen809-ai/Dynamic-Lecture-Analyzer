@@ -11,7 +11,32 @@ const STOP_WORDS = new Set([
   'i', 'our', 'your', 'their', 'can', 'could', 'should', 'would', 'may', 'might', 'must', 'will', 'shall'
 ]);
 
-const ALLOWED_LANGUAGES = new Set(['English', 'Hindi', 'Hinglish']);
+const ALLOWED_LANGUAGES = new Set([
+  'English',
+  'Hindi',
+  'Hinglish',
+  'Bengali',
+  'Tamil',
+  'Telugu',
+  'Marathi',
+  'Gujarati',
+  'Punjabi',
+  'Urdu',
+  'Kannada',
+  'Malayalam',
+  'Odia',
+  'Assamese',
+  'Sanskrit',
+  'Konkani',
+  'Maithili',
+  'Dogri',
+  'Manipuri',
+  'Bodo',
+  'Santhali',
+  'Kashmiri',
+  'Sindhi',
+  'Nepali'
+]);
 
 // Content Moderation Lists
 const PROFANITY_WORDS = new Set([
@@ -63,23 +88,6 @@ const checkContentModeration = (text, type = 'message') => {
       message: '⚠️ I cannot discuss explicit or adult content. This is an educational platform focused on lecture analysis and learning. Please ask lecture-related questions only.',
       category: 'explicit'
     };
-  }
-
-  // Check if the message is lecture-related (for chat only)
-  if (type === 'chat') {
-    const hasLectureTerm = Array.from(LECTURE_KEYWORDS).some((keyword) => cleanText.includes(keyword));
-    const isQuestion = cleanText.includes('?') || cleanText.includes('what') || 
-                       cleanText.includes('how') || cleanText.includes('why') || 
-                       cleanText.includes('explain') || cleanText.includes('define') ||
-                       cleanText.includes('tell') || cleanText.includes('help');
-    
-    if (!hasLectureTerm && !isQuestion) {
-      return {
-        isAllowed: false,
-        message: '📚 I\'m designed to help with lecture-related questions and study topics. Please ask questions about your lecture content, topics, concepts, or assignments.',
-        category: 'non-lecture'
-      };
-    }
   }
 
   return { isAllowed: true };
@@ -688,20 +696,31 @@ const chatWithLectureAssistant = async ({
     const requestParams = {
       model,
       temperature: 0.3,
+      max_tokens: 120,
       messages: [
         {
           role: 'system',
-          content: [
-            'You are an AI tutor for lecture support.',
-            'Answer clearly and concisely.',
-            `Respond in ${safeLanguage}.`,
-            'If asked for study help, provide practical guidance and examples.',
-            'Only answer education and lecture-related questions.'
-          ].join(' ')
+          content: `
+You are a Lecture Assistant AI.
+
+STRICT RULES:
+- Answer ONLY using lecture content
+- Detect user's language automatically
+- Reply in SAME language as user's question
+- Support: English, Hindi, Hinglish, Marathi
+
+- If answer not found in lecture:
+  reply EXACTLY:
+  "This topic is not covered in the lecture"
+
+- Do NOT give general responses
+- Do NOT ignore user language
+- Keep answers simple and clear
+`
         },
         ...(cleanContext
-          ? [{ role: 'user', content: `Lecture context:\n${cleanContext}` }]
-          : []),
+          ? [{ role: 'user', content: `Lecture content:\n${cleanContext}` }]
+          : [{ role: 'user', content: 'No lecture content is available for this question.' }]),
         ...historyMessages,
         { role: 'user', content: cleanMessage }
       ]

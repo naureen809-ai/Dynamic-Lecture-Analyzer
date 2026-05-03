@@ -1,7 +1,32 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import apiClient from '../api/apiClient'
 
-const LANGUAGES = ['English', 'Hindi', 'Hinglish']
+const LANGUAGES = [
+  'English',
+  'Hindi',
+  'Hinglish',
+  'Bengali',
+  'Tamil',
+  'Telugu',
+  'Marathi',
+  'Gujarati',
+  'Punjabi',
+  'Urdu',
+  'Kannada',
+  'Malayalam',
+  'Odia',
+  'Assamese',
+  'Sanskrit',
+  'Konkani',
+  'Maithili',
+  'Dogri',
+  'Manipuri',
+  'Bodo',
+  'Santhali',
+  'Kashmiri',
+  'Sindhi',
+  'Nepali'
+]
 
 function highlightText(text, query) {
   const content = String(text || '')
@@ -234,7 +259,7 @@ export default function Dashboard() {
   function buildAnalysisText(payload) {
     const safe = payload || EMPTY_RESULT
     const lines = [
-      'Dynamic Lecture Analyzer Report',
+      'Lecture Analyzer Report',
       `Generated: ${new Date().toLocaleString()}`,
       '',
       'Summary',
@@ -332,8 +357,8 @@ export default function Dashboard() {
     <div className="min-h-[82vh] rounded-2xl shadow-xl border border-slate-800 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-6 md:p-8">
       <header className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <p className="text-xs tracking-[0.28em] uppercase text-cyan-300/90">Dynamic Lecture Analyzer</p>
-          <h1 className="mt-2 text-3xl md:text-4xl font-extrabold text-white">AI Lecture Intelligence</h1>
+          <h1 className="mt-2 text-3xl md:text-4xl font-extrabold text-white">Dynamic</h1>
+          <p className="text-lg font-semibold text-sky-400">Lecture Analyzer</p>
           <p className="mt-2 text-sm text-slate-400">Get structured insights from lecture transcripts in seconds.</p>
         </div>
         <span className="self-start rounded-full border border-cyan-400/40 bg-cyan-500/10 px-4 py-1 text-xs font-medium text-cyan-200">

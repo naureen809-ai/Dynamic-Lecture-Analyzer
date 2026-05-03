@@ -20,13 +20,12 @@ const topNavItems = [
 
 function TopBar({ activeSection, onNavigate }) {
   return (
-    <header className="app-topbar sticky top-0 z-40 ml-[280px] h-20 flex items-center justify-between px-8 bg-slate-950/90 backdrop-blur-xl border-b border-white/5">
+    <header className="app-topbar sticky top-0 z-40 md:ml-[280px] ml-0 h-20 flex items-center justify-between px-8 bg-slate-950/90 backdrop-blur-xl border-b border-white/5">
       <div className="flex items-center gap-8">
         <div>
-          <h1 className="text-xl font-black text-white tracking-tight">AI Lecture Intelligence</h1>
-          <p className="text-xs uppercase tracking-[0.22em] text-slate-500 mt-1">Intelligence Panel</p>
+          <h1 className="text-xl font-black text-white tracking-tight">Lecture Analytics</h1>
         </div>
-        <nav className="hidden md:flex gap-6">
+        <nav className="flex flex-wrap gap-3">
           {topNavItems.map((item) => (
             <button
               key={item.id}
@@ -146,6 +145,12 @@ export default function App() {
     loadStats()
     loadHistory()
   }, [])
+
+  useEffect(() => {
+    if (activeSection === 'analysis-history') {
+      loadHistory()
+    }
+  }, [activeSection])
 
   async function loadStats() {
     setStatsLoading(true)
@@ -274,7 +279,7 @@ export default function App() {
   const buildReportText = (analysis) => {
     const safe = analysis || EMPTY_RESULT
     return [
-      'Dynamic Lecture Analyzer Report',
+      'Lecture Analyzer Report',
       '',
       'Summary',
       safe.summary || 'No summary available.',
@@ -314,9 +319,9 @@ export default function App() {
 
   return (
     <div className="app-root min-h-screen">
-      <Sidebar activeSection={activeSection} setActiveSection={setActiveSection} onNewAnalysis={resetAnalysis} />
       <TopBar activeSection={activeSection} onNavigate={setActiveSection} />
-      <main className="ml-[280px] p-gutter min-h-[calc(100vh-80px)]">
+      <Sidebar activeSection={activeSection} setActiveSection={setActiveSection} onNewAnalysis={resetAnalysis} />
+      <main className="md:ml-[280px] ml-0 p-gutter min-h-[calc(100vh-80px)]">
         {activeSection === 'dashboard' && (
           <DashboardSection
             analysisResult={analysisResult}

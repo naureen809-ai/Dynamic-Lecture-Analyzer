@@ -17,14 +17,14 @@ const NAV_ITEMS = [
 
 export default function Sidebar({ activeSection, setActiveSection, onNewAnalysis }) {
   return (
-    <aside className="fixed left-0 top-0 h-screen w-[280px] border-r border-white/10 bg-[#020617]/80 backdrop-blur-xl flex flex-col p-6 space-y-8 z-50 shadow-2xl shadow-sky-500/5 overflow-y-auto">
+    <aside className="relative w-full md:fixed md:left-0 md:top-0 md:h-screen md:w-[280px] md:border-r border-b border-white/10 bg-[#020617]/80 backdrop-blur-xl flex flex-col p-6 space-y-8 z-50 shadow-2xl shadow-sky-500/5 overflow-y-auto">
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-container to-secondary-container flex items-center justify-center">
           <span className="material-symbols-outlined text-on-primary-container" style={{ fontVariationSettings: "'FILL' 1" }}>analytics</span>
         </div>
         <div>
-          <h2 className="text-lg font-bold text-white tracking-tighter leading-none">Lecture Pro Panel</h2>
-          <p className="text-[10px] text-sky-400 font-medium uppercase tracking-widest mt-1">Dynamic Analyzer</p>
+          <p className="text-base font-bold text-white tracking-tighter leading-none">Dynamic</p>
+          <p className="text-sm font-semibold text-sky-400 tracking-tighter">Lecture Analyzer</p>
         </div>
       </div>
 

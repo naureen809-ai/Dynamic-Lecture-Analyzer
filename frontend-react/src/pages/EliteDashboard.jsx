@@ -1,7 +1,32 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import apiClient from '../api/apiClient'
 
-const LANGUAGES = ['English', 'Hindi', 'Hinglish']
+const LANGUAGES = [
+  'English',
+  'Hindi',
+  'Hinglish',
+  'Bengali',
+  'Tamil',
+  'Telugu',
+  'Marathi',
+  'Gujarati',
+  'Punjabi',
+  'Urdu',
+  'Kannada',
+  'Malayalam',
+  'Odia',
+  'Assamese',
+  'Sanskrit',
+  'Konkani',
+  'Maithili',
+  'Dogri',
+  'Manipuri',
+  'Bodo',
+  'Santhali',
+  'Kashmiri',
+  'Sindhi',
+  'Nepali'
+]
 
 const EMPTY_RESULT = {
   summary: '',
@@ -144,7 +169,7 @@ export default function EliteDashboard() {
   const buildAnalysisText = (payload) => {
     const safe = payload || EMPTY_RESULT
     const lines = [
-      'Dynamic Lecture Analyzer Report',
+      'Lecture Analyzer Report',
       `Generated: ${new Date().toLocaleString()}`,
       '',
       'Summary',

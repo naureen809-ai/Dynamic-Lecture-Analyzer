@@ -16,7 +16,7 @@ export default function DashboardSection({ analysisResult, stats, statsLoading, 
       <header className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.28em] text-cyan-300/90">Overview</p>
-          <h1 className="mt-2 text-3xl md:text-4xl font-extrabold text-white">Lecture Intelligence Dashboard</h1>
+          <h1 className="mt-2 text-3xl md:text-4xl font-extrabold text-white">Lecture Analytics Dashboard</h1>
           <p className="mt-2 text-sm text-slate-400">A premium overview of your lecture analytics and latest AI insights.</p>
         </div>
         <span className="rounded-full border border-cyan-400/40 bg-cyan-500/10 px-4 py-1 text-xs font-medium text-cyan-200">

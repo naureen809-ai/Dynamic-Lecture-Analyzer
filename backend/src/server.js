@@ -11,7 +11,32 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 5001;
 const MAX_INPUT_LENGTH = 25000;
-const ALLOWED_LANGUAGES = new Set(['English', 'Hindi', 'Hinglish']);
+const ALLOWED_LANGUAGES = new Set([
+  'English',
+  'Hindi',
+  'Hinglish',
+  'Bengali',
+  'Tamil',
+  'Telugu',
+  'Marathi',
+  'Gujarati',
+  'Punjabi',
+  'Urdu',
+  'Kannada',
+  'Malayalam',
+  'Odia',
+  'Assamese',
+  'Sanskrit',
+  'Konkani',
+  'Maithili',
+  'Dogri',
+  'Manipuri',
+  'Bodo',
+  'Santhali',
+  'Kashmiri',
+  'Sindhi',
+  'Nepali'
+]);
 
 const allowedOrigins = (process.env.CLIENT_ORIGIN || '')
   .split(',')
