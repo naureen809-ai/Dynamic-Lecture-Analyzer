@@ -1,0 +1,18 @@
+const mongoose = require('mongoose');
+
+const lectureSchema = new mongoose.Schema(
+  {
+    text: { type: String, required: true },
+    summary: { type: String, required: true },
+    keyPoints: { type: [String], default: [] },
+    explanation: { type: String, required: true },
+    sentiment: { type: String, default: 'Neutral' },
+    readabilityScore: { type: Number, default: 0 },
+    analysisProvider: { type: String, default: 'openai' },
+    analysisModel: { type: String, default: '' },
+    createdFrom: { type: String, enum: ['text'], default: 'text' }
+  },
+  { timestamps: true }
+);
+
+module.exports = mongoose.model('Lecture', lectureSchema);
