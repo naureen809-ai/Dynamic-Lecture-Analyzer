@@ -11,7 +11,7 @@ const connectDB = async () => {
     console.log('MongoDB connected');
   } catch (error) {
     console.error('MongoDB connection failed:', error.message);
-    process.exit(1);
+    console.warn('Starting server without an active MongoDB connection. API requests that persist data may fail until the database is available.');
   }
 };
 
