@@ -2,22 +2,22 @@ import React from 'react'
 
 function SectionBlock({ title, children }) {
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-950/80 p-5">
-      <h3 className="text-lg font-semibold text-white">{title}</h3>
-      <div className="mt-3 text-slate-200 space-y-3">{children}</div>
+    <div className="rounded-2xl border dark:border-slate-800 light:border-slate-300 dark:bg-slate-950/80 light:bg-slate-100 p-5 transition-colors duration-400" style={{ backgroundColor: 'var(--color-bgSecondary)', borderColor: 'var(--color-border)' }}>
+      <h3 className="text-lg font-semibold" style={{ color: 'var(--color-text)' }}>{title}</h3>
+      <div className="mt-3 space-y-3" style={{ color: 'var(--color-textSecondary)' }}>{children}</div>
     </div>
   )
 }
 
 function BadgeList({ items }) {
   if (!items?.length) {
-    return <p className="text-slate-500">No keywords available.</p>
+    return <p style={{ color: 'var(--color-textMuted)' }}>No keywords available.</p>
   }
 
   return (
     <div className="flex flex-wrap gap-2">
       {items.map((item, idx) => (
-        <span key={`${item}-${idx}`} className="rounded-full border border-cyan-500/40 bg-cyan-500/10 px-3 py-1 text-xs font-semibold text-cyan-200">
+        <span key={`${item}-${idx}`} className="rounded-full border px-3 py-1 text-xs font-semibold transition-colors duration-400" style={{ borderColor: `${window.getComputedStyle(document.documentElement).getPropertyValue('--color-primary')}66`, backgroundColor: `${window.getComputedStyle(document.documentElement).getPropertyValue('--color-primary')}1a`, color: 'var(--color-primary)' }}>
           {item}
         </span>
       ))}
@@ -40,19 +40,20 @@ export default function ReportsSection({ analysisResult, onCopy, copied, onExpor
   ].filter(Boolean).join('\n\n')
 
   return (
-    <section className="rounded-2xl shadow-xl border border-slate-800 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-6">
+    <section className="rounded-2xl shadow-xl border dark:border-slate-800 light:border-slate-300 dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 light:bg-white p-6 transition-colors duration-400" style={{ backgroundColor: 'var(--color-bg)', borderColor: 'var(--color-border)' }}>
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <p className="text-xs uppercase tracking-[0.28em] text-cyan-300/90">Reports</p>
-          <h1 className="mt-2 text-3xl font-extrabold text-white">Full Lecture Report</h1>
-          <p className="mt-2 text-sm text-slate-400">Export or copy the complete structured analysis for review and study.</p>
+          <p className="text-xs uppercase tracking-[0.28em]" style={{ color: 'var(--color-primary)' }}>Reports</p>
+          <h1 className="mt-2 text-3xl font-extrabold" style={{ color: 'var(--color-text)' }}>Full Lecture Report</h1>
+          <p className="mt-2 text-sm" style={{ color: 'var(--color-textMuted)' }}>Export or copy the complete structured analysis for review and study.</p>
         </div>
         <div className="flex flex-wrap gap-3">
           <button
             type="button"
             onClick={() => onCopy(reportText)}
             disabled={!reportText}
-            className="rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-semibold text-slate-200 hover:border-cyan-400 hover:text-cyan-200 disabled:cursor-not-allowed disabled:text-slate-500"
+            className="rounded-2xl border px-4 py-3 text-sm font-semibold transition-colors duration-400 hover:border-opacity-100 disabled:cursor-not-allowed"
+            style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-bgSecondary)', color: 'var(--color-text)' }}
           >
             {copied ? 'Copied' : 'Copy Full Report'}
           </button>
@@ -60,7 +61,8 @@ export default function ReportsSection({ analysisResult, onCopy, copied, onExpor
             type="button"
             onClick={() => onExportPdf(exportId)}
             disabled={!exportId}
-            className="rounded-2xl border border-slate-700 bg-cyan-300 px-4 py-3 text-sm font-semibold text-slate-950 hover:bg-cyan-200 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
+            className="rounded-2xl border px-4 py-3 text-sm font-semibold transition-colors duration-400 disabled:cursor-not-allowed"
+            style={{ borderColor: 'var(--color-primary)', backgroundColor: 'var(--color-primary)', color: 'var(--color-bg)' }}
           >
             Export PDF
           </button>
@@ -68,7 +70,7 @@ export default function ReportsSection({ analysisResult, onCopy, copied, onExpor
       </div>
 
       {!analysisResult ? (
-        <div className="mt-8 rounded-2xl border border-slate-800 bg-slate-950/80 p-6 text-slate-500">
+        <div className="mt-8 rounded-2xl border p-6 transition-colors duration-400" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-bgSecondary)', color: 'var(--color-textMuted)' }}>
           Run an analysis to generate a complete lecture report.
         </div>
       ) : (
@@ -79,25 +81,25 @@ export default function ReportsSection({ analysisResult, onCopy, copied, onExpor
 
           <SectionBlock title="Topics">
             {result.topics?.length ? (
-              <ul className="list-disc pl-5 space-y-2 text-slate-200">
+              <ul className="list-disc pl-5 space-y-2">
                 {result.topics.map((topic, idx) => (
                   <li key={`${topic}-${idx}`}>{topic}</li>
                 ))}
               </ul>
             ) : (
-              <p className="text-slate-500">No topics identified.</p>
+              <p style={{ color: 'var(--color-textMuted)' }}>No topics identified.</p>
             )}
           </SectionBlock>
 
           <SectionBlock title="Action Plan">
             {result.action_items?.length ? (
-              <ul className="list-decimal pl-5 space-y-2 text-slate-200">
+              <ul className="list-decimal pl-5 space-y-2">
                 {result.action_items.map((item, idx) => (
                   <li key={`${item}-${idx}`}>{item}</li>
                 ))}
               </ul>
             ) : (
-              <p className="text-slate-500">No action items found.</p>
+              <p style={{ color: 'var(--color-textMuted)' }}>No action items found.</p>
             )}
           </SectionBlock>
 

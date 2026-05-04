@@ -3,6 +3,9 @@
   "private": true,
   "version": "1.0.0",
   "scripts": {
+    "dev-backend": "npm run dev --prefix backend",
+    "dev-frontend": "npm run dev --prefix frontend-react",
+    "dev": "npm run dev-backend & npm run dev-frontend",
     "build": "npm ci --prefix frontend-react && npm run build --prefix frontend-react && node ./copy-dist.js",
     "vercel-build": "npm run build"
   },

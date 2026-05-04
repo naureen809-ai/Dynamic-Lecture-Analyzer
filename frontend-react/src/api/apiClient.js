@@ -2,27 +2,33 @@ import axios from 'axios'
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL
 
-const defaultBackend = BACKEND_URL || 'https://dynamic-lecture-analyzer.onrender.com'
+const defaultBackend = BACKEND_URL || 'http://localhost:5001'
 
 const client = axios.create({
   baseURL: defaultBackend,
   timeout: 60000
 })
 
-client.interceptors.request.use((config) => {
-  const token = localStorage.getItem('AUTH_TOKEN')
-  if (token) {
-    config.headers = {
-      ...config.headers,
-      Authorization: `Bearer ${token}`
+// Enhanced error handling
+client.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (!error.response) {
+      // Network error
+      const message = `Network Error: Cannot connect to backend at ${defaultBackend}`
+      console.error(message, error)
+      error.message = message
+    } else if (error.response.status === 0) {
+      // CORS or connection refused
+      const message = `Backend Connection Failed: Make sure backend is running on ${defaultBackend}`
+      console.error(message)
+      error.message = message
     }
+    return Promise.reject(error)
   }
-  return config
-})
+)
 
 export default {
-  register: (name, email, password) => client.post('/api/auth/register', { name, email, password }),
-  login: (email, password) => client.post('/api/auth/login', { email, password }),
   analyze: (text, language = 'English') => client.post('/api/analyze', { text, language }),
   history: (limit = 10) => client.get('/api/history', { params: { limit } }),
   chat: ({ message, context_text, language = 'English', history = [] }) =>

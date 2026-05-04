@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route } from 'react-router-dom'
 import apiClient from './api/apiClient'
+import { useTheme } from './context/ThemeContext'
+import { getErrorMessage } from './utils/errorHandler'
 import Sidebar from './components/Sidebar'
 import InputSection from './components/InputSection'
 import SummarySection from './components/SummarySection'
@@ -11,8 +13,6 @@ import HistorySection from './components/HistorySection'
 import ReportsSection from './components/ReportsSection'
 import DashboardSection from './components/DashboardSection'
 import ChatSection from './components/ChatSection'
-import LoginPage from './pages/LoginPage'
-import RegisterPage from './pages/RegisterPage'
 import './styles/index.css'
 
 const topNavItems = [
@@ -21,55 +21,48 @@ const topNavItems = [
   { id: 'reports', label: 'Reports' }
 ]
 
-function TopBar({ activeSection, onNavigate, onLogout, userName }) {
+function TopBar({ activeSection, onNavigate }) {
+  const { currentTheme, toggleTheme, themes } = useTheme()
+  const themeNames = Object.keys(themes)
+  
   return (
-    <header className="app-topbar sticky top-0 z-40 md:ml-[280px] ml-0 h-20 flex items-center justify-between px-8 bg-slate-950/90 backdrop-blur-xl border-b border-white/5">
+    <header className="sticky top-0 z-40 md:ml-[280px] ml-0 h-20 flex items-center justify-between px-8 transition-colors duration-400" style={{ backgroundColor: 'var(--color-bg)', borderColor: 'var(--color-border)', borderBottom: '1px solid var(--color-border)', backdropFilter: 'blur(12px)' }}>
       <div className="flex items-center gap-8">
         <div>
-          <h1 className="text-xl font-black text-white tracking-tight">Lecture Analytics</h1>
+          <h1 className="text-2xl font-black tracking-tight transition-colors duration-400" style={{ color: 'var(--color-text)' }}>Lecture Analytics</h1>
         </div>
-        <nav className="flex flex-wrap gap-3">
+        <nav className="hidden sm:flex flex-wrap gap-4">
           {topNavItems.map((item) => (
             <button
               key={item.id}
               type="button"
               onClick={() => onNavigate(item.id)}
-              className={`text-xs uppercase tracking-widest font-semibold transition-all ${
-                activeSection === item.id
-                  ? 'text-sky-400 border-b-2 border-sky-400 pb-1'
-                  : 'text-slate-400 hover:text-white opacity-80 hover:opacity-100'
-              }`}
+              className="text-xs uppercase tracking-widest font-bold transition-all duration-300 pb-1 border-b-2"
+              style={{
+                color: activeSection === item.id ? 'var(--color-primary)' : 'var(--color-textMuted)',
+                borderColor: activeSection === item.id ? 'var(--color-primary)' : 'transparent'
+              }}
             >
               {item.label}
             </button>
           ))}
         </nav>
       </div>
-      <div className="flex items-center gap-3 text-slate-400">
-        <button className="icon-button" type="button" aria-label="Dark mode">
-          <span className="material-symbols-outlined">dark_mode</span>
+      <div className="flex items-center gap-3">
+        <button
+          onClick={toggleTheme}
+          type="button"
+          className="px-4 py-2 rounded-xl transition-all duration-300 text-xs uppercase font-bold tracking-wider border"
+          title={`Theme: ${themes && themes[currentTheme] ? themes[currentTheme].name : 'Dark'}`}
+          style={{
+            backgroundColor: `var(--color-bgSecondary)`,
+            color: `var(--color-text)`,
+            borderColor: `var(--color-border)`
+          }}
+        >
+          <span className="inline-block capitalize">{themes && themes[currentTheme] ? themes[currentTheme].name : 'Dark'}</span>
+          <span className="ml-2 text-base">⚡</span>
         </button>
-        <button className="icon-button relative" type="button" aria-label="Notifications">
-          <span className="material-symbols-outlined">notifications</span>
-          <span className="absolute top-2 right-2 w-2 h-2 bg-secondary rounded-full" />
-        </button>
-        <button className="icon-button" type="button" aria-label="Settings">
-          <span className="material-symbols-outlined">settings</span>
-        </button>
-        {userName && (
-          <div className="ml-4 pl-4 border-l border-white/10 flex items-center gap-3">
-            <div>
-              <p className="text-sm font-semibold text-white">{userName}</p>
-              <button
-                type="button"
-                onClick={onLogout}
-                className="text-xs uppercase tracking-[0.28em] text-slate-400 hover:text-white"
-              >
-                Logout
-              </button>
-            </div>
-          </div>
-        )}
       </div>
     </header>
   )
@@ -135,18 +128,8 @@ export default function App() {
   const [searchLoading, setSearchLoading] = useState(false)
   const [searchError, setSearchError] = useState('')
   const [copiedKey, setCopiedKey] = useState('')
-  const [authToken, setAuthToken] = useState(() => localStorage.getItem('AUTH_TOKEN') || '')
-  const [authUser, setAuthUser] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem('AUTH_USER') || 'null')
-    } catch {
-      return null
-    }
-  })
 
-  const isAuthenticated = Boolean(authToken && authUser)
-
-  const canAnalyze = useMemo(() => text.trim().length > 0 && !loading && isAuthenticated, [text, loading, isAuthenticated])
+  const canAnalyze = useMemo(() => text.trim().length > 0 && !loading, [text, loading])
   const canDownload = useMemo(() => {
     return Boolean(
       analysisResult && (
@@ -162,11 +145,9 @@ export default function App() {
   const currentResult = analysisResult || EMPTY_RESULT
 
   useEffect(() => {
-    if (isAuthenticated) {
-      loadStats()
-      loadHistory()
-    }
-  }, [isAuthenticated])
+    loadStats()
+    loadHistory()
+  }, [])
 
   useEffect(() => {
     if (activeSection === 'analysis-history') {
@@ -175,8 +156,6 @@ export default function App() {
   }, [activeSection])
 
   async function loadStats() {
-    if (!isAuthenticated) return
-
     setStatsLoading(true)
     setStatsError('')
 
@@ -184,15 +163,13 @@ export default function App() {
       const res = await apiClient.stats()
       setStats(res?.data?.data || { total_lectures_processed: 0, total_questions_generated: 0 })
     } catch (err) {
-      setStatsError(err?.response?.data?.message || err?.message || 'Unable to load statistics.')
+      setStatsError(getErrorMessage(err))
     } finally {
       setStatsLoading(false)
     }
   }
 
   async function loadHistory() {
-    if (!isAuthenticated) return
-
     setHistoryLoading(true)
     setHistoryError('')
 
@@ -200,7 +177,7 @@ export default function App() {
       const res = await apiClient.history(8)
       setHistory(Array.isArray(res?.data?.data) ? res.data.data : [])
     } catch (err) {
-      setHistoryError(err?.response?.data?.message || err?.message || 'Unable to fetch history.')
+      setHistoryError(getErrorMessage(err))
     } finally {
       setHistoryLoading(false)
     }
@@ -220,10 +197,7 @@ export default function App() {
       await loadHistory()
       await loadStats()
     } catch (err) {
-      const networkMessage = err?.message === 'Network Error'
-        ? 'Network Error: could not reach the backend. Start the backend server and set VITE_BACKEND_URL to http://localhost:5001 if needed.'
-        : err?.response?.data?.message || err?.message || 'Failed to analyze lecture text.'
-      setError(networkMessage)
+      setError(getErrorMessage(err))
       setAnalysisResult(null)
     } finally {
       setLoading(false)
@@ -248,7 +222,7 @@ export default function App() {
       document.body.removeChild(anchor)
       URL.revokeObjectURL(url)
     } catch (err) {
-      setError(err?.response?.data?.message || err?.message || 'Unable to export PDF.')
+      setError(getErrorMessage(err))
     }
   }
 
@@ -267,7 +241,7 @@ export default function App() {
       const res = await apiClient.search(q, 8)
       setSearchResults(Array.isArray(res?.data?.data) ? res.data.data : [])
     } catch (err) {
-      setSearchError(err?.response?.data?.message || err?.message || 'Search failed.')
+      setSearchError(getErrorMessage(err))
       setSearchResults([])
     } finally {
       setSearchLoading(false)
@@ -294,23 +268,6 @@ export default function App() {
     setAnalysisResult(normalizePayload(payload))
     setText(entry.input_text || '')
     setActiveSection('analysis-summary')
-  }
-
-  function handleAuthSuccess({ token, user }) {
-    localStorage.setItem('AUTH_TOKEN', token)
-    localStorage.setItem('AUTH_USER', JSON.stringify(user))
-    setAuthToken(token)
-    setAuthUser(user)
-  }
-
-  function handleLogout() {
-    localStorage.removeItem('AUTH_TOKEN')
-    localStorage.removeItem('AUTH_USER')
-    setAuthToken('')
-    setAuthUser(null)
-    setAnalysisResult(null)
-    setHistory([])
-    setStats({ total_lectures_processed: 0, total_questions_generated: 0 })
   }
 
   function resetAnalysis() {
@@ -366,32 +323,11 @@ export default function App() {
   return (
     <Routes>
       <Route
-        path="/login"
-        element={
-          isAuthenticated ? (
-            <Navigate to="/" replace />
-          ) : (
-            <LoginPage onLogin={handleAuthSuccess} />
-          )
-        }
-      />
-      <Route
-        path="/register"
-        element={
-          isAuthenticated ? (
-            <Navigate to="/" replace />
-          ) : (
-            <RegisterPage onRegister={handleAuthSuccess} />
-          )
-        }
-      />
-      <Route
         path="/*"
         element={
-          isAuthenticated ? (
-            <div className="app-root min-h-screen">
-              <TopBar activeSection={activeSection} onNavigate={setActiveSection} onLogout={handleLogout} userName={authUser?.name} />
-              <Sidebar activeSection={activeSection} setActiveSection={setActiveSection} onNewAnalysis={resetAnalysis} />
+          <div className="app-root min-h-screen transition-colors duration-400" style={{ backgroundColor: 'var(--color-bg)', color: 'var(--color-text)' }}>
+            <TopBar activeSection={activeSection} onNavigate={setActiveSection} />
+            <Sidebar activeSection={activeSection} setActiveSection={setActiveSection} onNewAnalysis={resetAnalysis} />
               <main className="md:ml-[280px] ml-0 p-gutter min-h-[calc(100vh-80px)]">
                 {activeSection === 'dashboard' && (
                   <DashboardSection
@@ -499,9 +435,6 @@ export default function App() {
                 )}
               </main>
             </div>
-          ) : (
-            <Navigate to="/login" replace />
-          )
         }
       />
     </Routes>

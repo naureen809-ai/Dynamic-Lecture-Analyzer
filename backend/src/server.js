@@ -4,8 +4,6 @@ const dotenv = require('dotenv');
 const mongoose = require('mongoose');
 const PDFDocument = require('pdfkit');
 const connectDB = require('./config/db');
-const authRoutes = require('./routes/authRoute');
-const authMiddleware = require('./middleware/authMiddleware');
 const { analyzeLectureText, chatWithLectureAssistant } = require('./services/aiService');
 
 dotenv.config();
@@ -51,14 +49,15 @@ const defaultOrigins = [
   'https://dynamic-lecture-analyzer.vercel.app'
 ];
 
+const originList = [...new Set([...defaultOrigins, ...allowedOrigins])];
+
 const corsOptions = {
-  origin: allowedOrigins.length > 0 ? allowedOrigins : true,
+  origin: originList,
   credentials: true
 };
 
 const lectureHistorySchema = new mongoose.Schema(
   {
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     input_text: { type: String, required: true, trim: true },
     language: { type: String, default: 'English' },
     ai_output: {
@@ -142,7 +141,6 @@ connectDB();
 
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '2mb' }));
-app.use('/api/auth', authRoutes);
 
 app.get('/', (req, res) => {
   res.json({
@@ -162,7 +160,7 @@ app.get('/health', (req, res) => {
   res.json({ ok: true, service: 'dynamic-lecture-analyzer-backend' });
 });
 
-app.post('/api/analyze', authMiddleware, async (req, res) => {
+app.post('/api/analyze', async (req, res) => {
   try {
     const rawText = req.body?.text;
     const language = normalizeLanguage(req.body?.language);
@@ -200,7 +198,6 @@ app.post('/api/analyze', authMiddleware, async (req, res) => {
     }
 
     const saved = await LectureHistory.create({
-      userId: req.user._id,
       input_text: text,
       language,
       ai_output: {
@@ -299,11 +296,11 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
-app.get('/api/history', authMiddleware, async (req, res) => {
+app.get('/api/history', async (req, res) => {
   try {
     const limit = parseLimit(req.query.limit, 20, 100);
 
-    const history = await LectureHistory.find({ userId: req.user._id })
+    const history = await LectureHistory.find({})
       .sort({ timestamp: -1 })
       .limit(limit)
       .lean();
@@ -322,12 +319,9 @@ app.get('/api/history', authMiddleware, async (req, res) => {
   }
 });
 
-app.get('/api/stats', authMiddleware, async (req, res) => {
+app.get('/api/stats', async (req, res) => {
   try {
     const aggregate = await LectureHistory.aggregate([
-      {
-        $match: { userId: req.user._id }
-      },
       {
         $group: {
           _id: null,

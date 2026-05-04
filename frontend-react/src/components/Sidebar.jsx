@@ -17,23 +17,23 @@ const NAV_ITEMS = [
 
 export default function Sidebar({ activeSection, setActiveSection, onNewAnalysis }) {
   return (
-    <aside className="relative w-full md:fixed md:left-0 md:top-0 md:h-screen md:w-[280px] md:border-r border-b border-white/10 bg-[#020617]/80 backdrop-blur-xl flex flex-col p-6 space-y-8 z-50 shadow-2xl shadow-sky-500/5 overflow-y-auto">
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-container to-secondary-container flex items-center justify-center">
-          <span className="material-symbols-outlined text-on-primary-container" style={{ fontVariationSettings: "'FILL' 1" }}>analytics</span>
+    <aside className="relative w-full md:fixed md:left-0 md:top-0 md:h-screen md:w-[280px] md:border-r border-b flex flex-col p-6 space-y-8 z-50 overflow-y-auto transition-colors duration-400" style={{ backgroundColor: 'var(--color-bgSecondary)', borderColor: 'var(--color-border)', backdropFilter: 'blur(12px)' }}>
+      <div className="flex items-center gap-3 pb-4 border-b transition-colors duration-400" style={{ borderColor: 'var(--color-border)' }}>
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center font-bold text-white shadow-lg shadow-cyan-500/40">
+          📊
         </div>
         <div>
-          <p className="text-base font-bold text-white tracking-tighter leading-none">Dynamic</p>
-          <p className="text-sm font-semibold text-sky-400 tracking-tighter">Lecture Analyzer</p>
+          <p className="text-base font-bold tracking-tighter leading-none transition-colors duration-400" style={{ color: 'var(--color-text)' }}>Dynamic</p>
+          <p className="text-sm font-semibold tracking-tighter transition-colors duration-400" style={{ color: 'var(--color-primary)' }}>Analyzer</p>
         </div>
       </div>
 
       <button
-        className="w-full py-3 bg-primary-container text-on-primary-container rounded-xl font-bold flex items-center justify-center gap-2 scale-95 active:scale-90 transition-transform shadow-lg shadow-primary-container/20"
+        className="w-full py-3 bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-400 hover:to-cyan-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-cyan-500/40 hover:shadow-cyan-500/50"
         type="button"
         onClick={onNewAnalysis}
       >
-        <span className="material-symbols-outlined text-[20px]">add_circle</span>
+        <span>➕</span>
         New Analysis
       </button>
 
@@ -45,14 +45,17 @@ export default function Sidebar({ activeSection, setActiveSection, onNewAnalysis
               key={item.id}
               type="button"
               onClick={() => setActiveSection(item.id)}
-              className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl border transition-colors duration-200 font-['Inter'] text-sm font-medium tracking-wide ${
-                isActive
-                  ? 'bg-sky-500/10 text-sky-400 border-r-2 border-sky-400'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-white/5 border-transparent'
-              }`}
+              className="w-full flex items-center gap-4 px-4 py-3 rounded-lg border transition-all duration-400 font-['Inter'] text-sm font-semibold tracking-wide"
+              style={{
+                backgroundColor: isActive ? `var(--color-primary)20` : 'transparent',
+                color: isActive ? 'var(--color-primary)' : 'var(--color-textMuted)',
+                borderColor: isActive ? `var(--color-primary)40` : 'transparent'
+              }}
             >
-              <span className="material-symbols-outlined" style={{ fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0" }}>
-                {item.icon}
+              <span className="text-lg">
+                {item.icon === 'dashboard' && '📈'}
+                {item.icon === 'forum' && '💬'}
+                {item.icon === 'bar_chart' && '📊'}
               </span>
               <span>{item.label}</span>
             </button>
@@ -60,8 +63,8 @@ export default function Sidebar({ activeSection, setActiveSection, onNewAnalysis
         })}
       </div>
 
-      <div className="pt-3 border-t border-white/5">
-        <p className="text-[11px] uppercase tracking-widest text-slate-500 mb-3">Analyzer Sections</p>
+      <div className="pt-4 border-t transition-colors duration-400" style={{ borderColor: 'var(--color-border)' }}>
+        <p className="text-[11px] uppercase tracking-widest mb-3 font-bold transition-colors duration-400" style={{ color: 'var(--color-textMuted)' }}>📚 Sections</p>
 
         <nav className="space-y-1">
           {NAV_ITEMS.map((item) => {
@@ -71,13 +74,21 @@ export default function Sidebar({ activeSection, setActiveSection, onNewAnalysis
                 key={item.id}
                 type="button"
                 onClick={() => setActiveSection(item.id)}
-                className={`w-full text-left px-4 py-3 font-['Inter'] text-sm font-medium tracking-wide transition-all duration-200 flex items-center gap-4 rounded-xl ${
-                  isActive
-                    ? 'bg-slate-800/90 text-white border border-slate-700'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
-                }`}
+                className="w-full text-left px-4 py-2.5 font-['Inter'] text-sm font-medium tracking-wide transition-all duration-400 flex items-center gap-3 rounded-lg border"
+                style={{
+                  backgroundColor: isActive ? `var(--color-primary)20` : 'transparent',
+                  color: isActive ? 'var(--color-primary)' : 'var(--color-textMuted)',
+                  borderColor: isActive ? `var(--color-primary)40` : 'transparent'
+                }}
               >
-                <span className="material-symbols-outlined text-[20px]">{item.icon}</span>
+                <span className="text-base">
+                  {item.icon === 'edit_note' && '📝'}
+                  {item.icon === 'assignment' && '📋'}
+                  {item.icon === 'category' && '🏷️'}
+                  {item.icon === 'checklist' && '✅'}
+                  {item.icon === 'label' && '🔖'}
+                  {item.icon === 'history' && '⏱️'}
+                </span>
                 <span>{item.label}</span>
               </button>
             )
@@ -85,17 +96,6 @@ export default function Sidebar({ activeSection, setActiveSection, onNewAnalysis
         </nav>
       </div>
 
-      <div className="pt-6 border-t border-white/5 flex items-center gap-3">
-        <img
-          alt="User profile"
-          className="w-10 h-10 rounded-full border border-sky-400/30"
-          src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=96&h=96&fit=crop&crop=faces"
-        />
-        <div>
-          <p className="text-sm font-bold text-white">Alex Chen</p>
-          <p className="text-xs text-slate-500">Premium Scholar</p>
-        </div>
-      </div>
     </aside>
   )
 }
