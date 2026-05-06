@@ -8,6 +8,7 @@ const ROUTE_ITEMS = [
 
 const NAV_ITEMS = [
   { id: 'ai-analysis', label: 'AI Analysis', icon: 'smart_toy' },
+  { id: 'speech-analysis', label: 'Speech Analysis', icon: 'mic' },
   { id: 'qa-practice', label: 'Q&A Practice', icon: 'help' },
   { id: 'mcq-generator', label: 'MCQ Generator', icon: 'quiz' },
   { id: 'analysis-actions', label: 'Action Plan', icon: 'checklist' },
@@ -82,6 +83,7 @@ export default function Sidebar({ activeSection, setActiveSection, onNewAnalysis
               >
                 <span className="text-base">
                   {item.icon === 'smart_toy' && '🤖'}
+                  {item.icon === 'mic' && '🎙️'}
                   {item.icon === 'help' && '❓'}
                   {item.icon === 'quiz' && '📝'}
                   {item.icon === 'checklist' && '✅'}

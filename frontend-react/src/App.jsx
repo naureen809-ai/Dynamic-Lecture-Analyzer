@@ -12,6 +12,7 @@ import HistorySection from './components/HistorySection'
 import ReportsSection from './components/ReportsSection'
 import DashboardSection from './components/DashboardSection'
 import ChatSection from './components/ChatSection'
+import SpeechAnalysisSection from './components/SpeechAnalysisSection'
 import './styles/index.css'
 
 const topNavItems = [
@@ -310,6 +311,15 @@ export default function App() {
                 {activeSection === 'ai-analysis' && (
                   <AIAnalysisSection
                     analysisResult={analysisResult}
+                    onAnalysisComplete={(result) => {
+                      setAnalysisResult(normalizePayload(result))
+                      setActiveSection('dashboard')
+                    }}
+                  />
+                )}
+
+                {activeSection === 'speech-analysis' && (
+                  <SpeechAnalysisSection
                     onAnalysisComplete={(result) => {
                       setAnalysisResult(normalizePayload(result))
                       setActiveSection('dashboard')
