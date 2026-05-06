@@ -4,7 +4,7 @@ const dotenv = require('dotenv');
 const mongoose = require('mongoose');
 const PDFDocument = require('pdfkit');
 const connectDB = require('./config/db');
-const { analyzeLectureText, chatWithLectureAssistant } = require('./services/aiService');
+const { analyzeLectureText, chatWithLectureAssistant, generateTopicMcqs } = require('./services/aiService');
 
 dotenv.config();
 
@@ -292,6 +292,41 @@ app.post('/api/chat', async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Failed to process chat request'
+    });
+  }
+});
+
+app.post('/api/mcq', async (req, res) => {
+  try {
+    const topic = String(req.body?.topic || '').trim();
+    const language = normalizeLanguage(req.body?.language);
+    const count = Number.parseInt(String(req.body?.count || 5), 10);
+
+    if (!topic) {
+      return res.status(400).json({
+        success: false,
+        message: 'topic is required'
+      });
+    }
+
+    const result = await generateTopicMcqs({ topic, language, count });
+
+    if (result?.moderated) {
+      return res.status(400).json({
+        success: false,
+        message: result.error || 'Topic is not allowed'
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: result
+    });
+  } catch (error) {
+    console.error('MCQ route error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to generate MCQs'
     });
   }
 });

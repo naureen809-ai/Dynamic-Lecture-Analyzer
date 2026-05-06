@@ -47,7 +47,7 @@ function MessageBubble({ role, content }) {
   )
 }
 
-export default function ChatPanel() {
+export default function ChatPanel({ analysisResult }) {
   const [language, setLanguage] = useState('English')
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -55,7 +55,9 @@ export default function ChatPanel() {
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      content: 'Hello! I am your lecture AI tutor. Ask anything about your topic.'
+      content: analysisResult && analysisResult.summary 
+        ? `🎓 Welcome to Educational Tutor! I've analyzed your lecture: "${analysisResult.summary.substring(0, 80)}...". Ask me any questions about this lecture content. I'll only answer questions related to this lecture.`
+        : '🎓 Welcome to Educational Tutor! I\'m here to help you understand your lecture topics. First, analyze a lecture in the AI Analysis section, then ask me questions about it. I focus exclusively on educational content from the lecture.'
     }
   ])
 
@@ -84,8 +86,27 @@ export default function ChatPanel() {
     setLoading(true)
 
     try {
+      // Build context from analysis result
+      let contextText = ''
+      if (analysisResult && analysisResult.summary) {
+        contextText = `Lecture Summary: ${analysisResult.summary}\n\n`
+        if (analysisResult.topics && analysisResult.topics.length) {
+          contextText += `Topics: ${analysisResult.topics.join(', ')}\n\n`
+        }
+        if (analysisResult.keywords && analysisResult.keywords.length) {
+          contextText += `Keywords: ${analysisResult.keywords.join(', ')}\n\n`
+        }
+        if (analysisResult.action_items && analysisResult.action_items.length) {
+          contextText += `Action Items: ${analysisResult.action_items.join(', ')}\n\n`
+        }
+        if (analysisResult.notes && analysisResult.notes.short_notes && analysisResult.notes.short_notes.length) {
+          contextText += `Notes: ${analysisResult.notes.short_notes.join(', ')}`
+        }
+      }
+
       const res = await apiClient.chat({
         message: userMessage,
+        context_text: contextText,
         language,
         history: nextMessages.slice(-8)
       })
@@ -107,8 +128,8 @@ export default function ChatPanel() {
     <section className="rounded-2xl shadow-2xl border p-6 md:p-8 transition-all duration-400" style={{ backgroundColor: 'var(--color-bg)', borderColor: 'var(--color-border)' }}>
       <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-6 border-b transition-colors duration-400" style={{ borderColor: 'var(--color-border)' }}>
         <div>
-          <p className="text-xs tracking-[0.28em] uppercase font-bold transition-colors duration-400" style={{ color: 'var(--color-primary)' }}>🎓 Tutor Chat</p>
-          <h1 className="mt-3 text-3xl md:text-4xl font-black transition-colors duration-400" style={{ color: 'var(--color-text)' }}>Lecture Q&A Assistant</h1>
+          <p className="text-xs tracking-[0.28em] uppercase font-bold transition-colors duration-400" style={{ color: 'var(--color-primary)' }}>📚 Educational Tutor</p>
+          <h1 className="mt-3 text-3xl md:text-4xl font-black transition-colors duration-400" style={{ color: 'var(--color-text)' }}>Study Assistant</h1>
         </div>
         <select
           value={language}
@@ -147,7 +168,7 @@ export default function ChatPanel() {
         <textarea
           value={input}
           onChange={(event) => setInput(event.target.value)}
-          placeholder="Ask about concepts, revision, interview questions, or examples..."
+          placeholder="Ask about lecture concepts, definitions, examples, formulas, or exam prep..."
           className="flex-1 min-h-24 rounded-xl border p-4 text-sm focus:outline-none focus:ring-2 transition-all resize-none"
           style={{
             borderColor: 'var(--color-border)',

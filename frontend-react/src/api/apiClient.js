@@ -33,6 +33,8 @@ export default {
   history: (limit = 10) => client.get('/api/history', { params: { limit } }),
   chat: ({ message, context_text, language = 'English', history = [] }) =>
     client.post('/api/chat', { message, context_text, language, history }),
+  generateMcqs: ({ topic, language = 'English', count = 5 }) =>
+    client.post('/api/mcq', { topic, language, count }),
   stats: () => client.get('/api/stats'),
   search: (q, limit = 10) => client.get('/api/search', { params: { q, limit } }),
   exportPdf: (id) => client.get(`/api/export/${id}`, { responseType: 'blob' })

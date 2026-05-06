@@ -1,14 +1,13 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import apiClient from './api/apiClient'
 import { useTheme } from './context/ThemeContext'
 import { getErrorMessage } from './utils/errorHandler'
 import Sidebar from './components/Sidebar'
-import InputSection from './components/InputSection'
-import SummarySection from './components/SummarySection'
-import TopicsSection from './components/TopicsSection'
+import AIAnalysisSection from './components/AIAnalysisSection'
+import QASection from './components/QASection'
+import MCQGeneratorSection from './components/MCQGeneratorSection'
 import ActionPlanSection from './components/ActionPlanSection'
-import KeywordsSection from './components/KeywordsSection'
 import HistorySection from './components/HistorySection'
 import ReportsSection from './components/ReportsSection'
 import DashboardSection from './components/DashboardSection'
@@ -113,10 +112,7 @@ function normalizePayload(payload) {
 
 export default function App() {
   const [activeSection, setActiveSection] = useState('dashboard')
-  const [text, setText] = useState('')
-  const [language, setLanguage] = useState('English')
   const [analysisResult, setAnalysisResult] = useState(null)
-  const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [stats, setStats] = useState({ total_lectures_processed: 0, total_questions_generated: 0 })
   const [statsLoading, setStatsLoading] = useState(false)
@@ -128,21 +124,6 @@ export default function App() {
   const [searchLoading, setSearchLoading] = useState(false)
   const [searchError, setSearchError] = useState('')
   const [copiedKey, setCopiedKey] = useState('')
-
-  const canAnalyze = useMemo(() => text.trim().length > 0 && !loading, [text, loading])
-  const canDownload = useMemo(() => {
-    return Boolean(
-      analysisResult && (
-        analysisResult.summary ||
-        analysisResult.speaker_feedback ||
-        (Array.isArray(analysisResult.topics) && analysisResult.topics.length) ||
-        (Array.isArray(analysisResult.action_items) && analysisResult.action_items.length) ||
-        (Array.isArray(analysisResult.keywords) && analysisResult.keywords.length)
-      )
-    )
-  }, [analysisResult])
-
-  const currentResult = analysisResult || EMPTY_RESULT
 
   useEffect(() => {
     loadStats()
@@ -180,27 +161,6 @@ export default function App() {
       setHistoryError(getErrorMessage(err))
     } finally {
       setHistoryLoading(false)
-    }
-  }
-
-  async function handleAnalyze() {
-    if (!canAnalyze) return
-
-    setLoading(true)
-    setError('')
-
-    try {
-      const res = await apiClient.analyze(text.trim(), language)
-      const payload = res?.data?.data?.ai_output || res?.data?.data || res?.data || {}
-      setAnalysisResult(normalizePayload(payload))
-      setActiveSection('analysis-summary')
-      await loadHistory()
-      await loadStats()
-    } catch (err) {
-      setError(getErrorMessage(err))
-      setAnalysisResult(null)
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -266,15 +226,12 @@ export default function App() {
   function handleSelectHistory(entry) {
     const payload = entry.ai_output || entry.ai_output || entry
     setAnalysisResult(normalizePayload(payload))
-    setText(entry.input_text || '')
-    setActiveSection('analysis-summary')
+    setActiveSection('dashboard')
   }
 
   function resetAnalysis() {
-    setText('')
     setAnalysisResult(null)
-    setError('')
-    setActiveSection('analysis-input')
+    setActiveSection('ai-analysis')
   }
 
   const exportDocumentId = analysisResult?.id || analysisResult?.document_id || analysisResult?.documentId || null
@@ -338,7 +295,7 @@ export default function App() {
                   />
                 )}
 
-                {activeSection === 'chat' && <ChatSection />}
+                {activeSection === 'chat' && <ChatSection analysisResult={analysisResult} />}
 
                 {activeSection === 'reports' && (
                   <ReportsSection
@@ -350,57 +307,22 @@ export default function App() {
                   />
                 )}
 
-                {activeSection === 'analysis-input' && (
-                  <InputSection
-                    text={text}
-                    language={language}
-                    onTextChange={setText}
-                    onLanguageChange={setLanguage}
-                    onAnalyze={handleAnalyze}
-                    onDownload={() => {
-                      const reportText = [
-                        'Lecture Summary',
-                        analysisResult?.summary || 'No summary available.',
-                        'Topics',
-                        ...(analysisResult?.topics || []),
-                        'Action Items',
-                        ...(analysisResult?.action_items || []),
-                        'Keywords',
-                        ...(analysisResult?.keywords || []),
-                        'Speaker Feedback',
-                        analysisResult?.speaker_feedback || 'No feedback available.'
-                      ].join('\n\n')
-                      const blob = new Blob([reportText], { type: 'text/plain;charset=utf-8' })
-                      const url = URL.createObjectURL(blob)
-                      const anchor = document.createElement('a')
-                      anchor.href = url
-                      anchor.download = `lecture-analysis-${new Date().toISOString().replace(/[:.]/g, '-')}.txt`
-                      document.body.appendChild(anchor)
-                      anchor.click()
-                      document.body.removeChild(anchor)
-                      URL.revokeObjectURL(url)
+                {activeSection === 'ai-analysis' && (
+                  <AIAnalysisSection
+                    analysisResult={analysisResult}
+                    onAnalysisComplete={(result) => {
+                      setAnalysisResult(normalizePayload(result))
+                      setActiveSection('dashboard')
                     }}
-                    loading={loading}
-                    error={error}
-                    canAnalyze={canAnalyze}
-                    canDownload={canDownload}
                   />
                 )}
 
-                {activeSection === 'analysis-summary' && (
-                  <SummarySection
-                    analysisResult={analysisResult}
-                    onCopy={handleCopy}
-                    copied={copiedKey === analysisResult?.summary}
-                  />
+                {activeSection === 'qa-practice' && (
+                  <QASection analysisResult={analysisResult} />
                 )}
 
-                {activeSection === 'analysis-topics' && (
-                  <TopicsSection
-                    analysisResult={analysisResult}
-                    onCopy={handleCopy}
-                    copied={copiedKey === (analysisResult?.topics || []).join('\n')}
-                  />
+                {activeSection === 'mcq-generator' && (
+                  <MCQGeneratorSection />
                 )}
 
                 {activeSection === 'analysis-actions' && (
@@ -408,14 +330,6 @@ export default function App() {
                     analysisResult={analysisResult}
                     onCopy={handleCopy}
                     copied={copiedKey === (analysisResult?.action_items || []).join('\n')}
-                  />
-                )}
-
-                {activeSection === 'analysis-keywords' && (
-                  <KeywordsSection
-                    analysisResult={analysisResult}
-                    onCopy={handleCopy}
-                    copied={copiedKey === (analysisResult?.keywords || []).join(', ')}
                   />
                 )}
 

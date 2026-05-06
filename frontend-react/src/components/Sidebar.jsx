@@ -7,11 +7,10 @@ const ROUTE_ITEMS = [
 ]
 
 const NAV_ITEMS = [
-  { id: 'analysis-input', label: 'Input Studio', icon: 'edit_note' },
-  { id: 'analysis-summary', label: 'Summary', icon: 'assignment' },
-  { id: 'analysis-topics', label: 'Topics', icon: 'category' },
+  { id: 'ai-analysis', label: 'AI Analysis', icon: 'smart_toy' },
+  { id: 'qa-practice', label: 'Q&A Practice', icon: 'help' },
+  { id: 'mcq-generator', label: 'MCQ Generator', icon: 'quiz' },
   { id: 'analysis-actions', label: 'Action Plan', icon: 'checklist' },
-  { id: 'analysis-keywords', label: 'Keywords', icon: 'label' },
   { id: 'analysis-history', label: 'History', icon: 'history' }
 ]
 
@@ -82,11 +81,10 @@ export default function Sidebar({ activeSection, setActiveSection, onNewAnalysis
                 }}
               >
                 <span className="text-base">
-                  {item.icon === 'edit_note' && '📝'}
-                  {item.icon === 'assignment' && '📋'}
-                  {item.icon === 'category' && '🏷️'}
+                  {item.icon === 'smart_toy' && '🤖'}
+                  {item.icon === 'help' && '❓'}
+                  {item.icon === 'quiz' && '📝'}
                   {item.icon === 'checklist' && '✅'}
-                  {item.icon === 'label' && '🔖'}
                   {item.icon === 'history' && '⏱️'}
                 </span>
                 <span>{item.label}</span>
