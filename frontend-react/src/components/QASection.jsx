@@ -10,6 +10,36 @@ export default function QASection({ analysisResult }) {
   const [error, setError] = useState('')
   const [answerSubmitted, setAnswerSubmitted] = useState(false)
 
+  const formatExplanation = (text) => {
+    if (!text) return null
+
+    // Split by numbered points (1. 2. 3. etc)
+    const parts = text.split(/(?=^\d+\.)/m).filter(p => p.trim())
+
+    return parts.map((part, idx) => {
+      // Parse bold text (**text**)
+      const segments = part.split(/\*\*(.+?)\*\*/g)
+      
+      return (
+        <div key={idx} className="mb-4 last:mb-0">
+          <p className="text-sm leading-6 transition-colors duration-400" style={{ color: 'var(--color-text)' }}>
+            {segments.map((segment, segIdx) => {
+              // Alternate between normal and bold segments
+              const isBold = segIdx % 2 === 1
+              return isBold ? (
+                <strong key={segIdx} style={{ color: 'var(--color-primary)' }}>
+                  {segment}
+                </strong>
+              ) : (
+                <span key={segIdx}>{segment}</span>
+              )
+            })}
+          </p>
+        </div>
+      )
+    })
+  }
+
   useEffect(() => {
     if (analysisResult?.language) {
       setLanguage(analysisResult.language)
@@ -193,10 +223,10 @@ export default function QASection({ analysisResult }) {
 
                 {answerSubmitted && aiExplanation && (
                   <div className="rounded-xl border p-6 transition-colors duration-400" style={{ backgroundColor: 'var(--color-bgSecondary)', borderColor: 'var(--color-primary)' }}>
-                    <h3 className="text-sm uppercase tracking-widest font-bold mb-3 transition-colors duration-400" style={{ color: 'var(--color-primary)' }}>🤖 AI Feedback & Explanation</h3>
-                    <p className="text-sm leading-6 transition-colors duration-400" style={{ color: 'var(--color-text)' }}>
-                      {aiExplanation}
-                    </p>
+                    <h3 className="text-sm uppercase tracking-widest font-bold mb-4 transition-colors duration-400" style={{ color: 'var(--color-primary)' }}>🤖 AI Feedback & Explanation</h3>
+                    <div className="space-y-3">
+                      {formatExplanation(aiExplanation)}
+                    </div>
                   </div>
                 )}
               </>

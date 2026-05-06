@@ -7,10 +7,7 @@ const connectDB = async () => {
       throw new Error('MONGO_URI or MONGODB_URI is missing');
     }
 
-    await mongoose.connect(uri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true
-    });
+    await mongoose.connect(uri);
     console.log('MongoDB connected');
   } catch (error) {
     console.error('MongoDB connection failed:', error.message);

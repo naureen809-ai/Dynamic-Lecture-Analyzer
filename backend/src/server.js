@@ -3,6 +3,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const mongoose = require('mongoose');
 const PDFDocument = require('pdfkit');
+const fileUpload = require('express-fileupload');
 const connectDB = require('./config/db');
 const { analyzeLectureText, chatWithLectureAssistant, generateTopicMcqs, transcribeAudioChunk } = require('./services/aiService');
 
@@ -154,6 +155,10 @@ connectDB();
 
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '2mb' }));
+app.use(fileUpload({
+  limits: { fileSize: 25 * 1024 * 1024 },
+  abortOnLimit: true
+}));
 
 app.get('/', (req, res) => {
   res.json({
@@ -173,13 +178,22 @@ app.get('/health', (req, res) => {
   res.json({ ok: true, service: 'dynamic-lecture-analyzer-backend' });
 });
 
-app.post('/api/transcribe', express.raw({ type: () => true, limit: '25mb' }), async (req, res) => {
+app.post('/api/transcribe', async (req, res) => {
   try {
     const language = String(req.query?.language || 'en').trim() || 'en';
-    const mimeType = String(req.headers['content-type'] || 'audio/webm').split(';')[0] || 'audio/webm';
-    const audioBuffer = Buffer.isBuffer(req.body) ? req.body : Buffer.from(req.body || []);
+    
+    if (!req.files || !req.files.audio) {
+      return res.status(400).json({
+        success: false,
+        message: 'audio file is required'
+      });
+    }
 
-    if (!audioBuffer.length) {
+    const audioFile = req.files.audio;
+    const audioBuffer = audioFile.data;
+    const mimeType = audioFile.mimetype || 'audio/webm';
+
+    if (!audioBuffer || !audioBuffer.length) {
       return res.status(400).json({
         success: false,
         message: 'audio chunk is required'
