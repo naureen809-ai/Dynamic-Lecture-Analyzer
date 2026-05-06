@@ -90,6 +90,8 @@ const EMPTY_RESULT = {
 
 function normalizePayload(payload) {
   return {
+    lecture_title: payload.lecture_title || '',
+    input_text: payload.input_text || '',
     summary: payload.summary || '',
     topics: Array.isArray(payload.topics) ? payload.topics : [],
     action_items: Array.isArray(payload.action_items) ? payload.action_items : [],
@@ -226,8 +228,12 @@ export default function App() {
 
   function handleSelectHistory(entry) {
     const payload = entry.ai_output || entry.ai_output || entry
-    setAnalysisResult(normalizePayload(payload))
-    setActiveSection('dashboard')
+    setAnalysisResult(normalizePayload({
+      ...payload,
+      lecture_title: entry.lecture_title,
+      input_text: entry.input_text
+    }))
+    setActiveSection('reports')
   }
 
   function resetAnalysis() {
@@ -313,7 +319,6 @@ export default function App() {
                     analysisResult={analysisResult}
                     onAnalysisComplete={(result) => {
                       setAnalysisResult(normalizePayload(result))
-                      setActiveSection('dashboard')
                     }}
                   />
                 )}

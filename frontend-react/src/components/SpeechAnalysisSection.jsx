@@ -55,6 +55,33 @@ const LANGUAGE_CODES = {
   Nepali: 'ne-NP'
 }
 
+const TRANSCRIPTION_LANGUAGE_CODES = {
+  English: 'en',
+  Hindi: 'hi',
+  Hinglish: 'en',
+  Bengali: 'bn',
+  Tamil: 'ta',
+  Telugu: 'te',
+  Marathi: 'mr',
+  Gujarati: 'gu',
+  Punjabi: 'pa',
+  Urdu: 'ur',
+  Kannada: 'kn',
+  Malayalam: 'ml',
+  Odia: 'or',
+  Assamese: 'as',
+  Sanskrit: 'sa',
+  Konkani: 'kok',
+  Maithili: 'mai',
+  Dogri: 'doi',
+  Manipuri: 'mni',
+  Bodo: 'brx',
+  Santhali: 'sat',
+  Kashmiri: 'ks',
+  Sindhi: 'sd',
+  Nepali: 'ne'
+}
+
 const EMPTY_RESULT = {
   summary: '',
   topics: [],
@@ -108,10 +135,30 @@ function getSpeechRecognition() {
   return window.SpeechRecognition || window.webkitSpeechRecognition || null
 }
 
+function getTranscriptionLanguageCode(language) {
+  return TRANSCRIPTION_LANGUAGE_CODES[language] || 'en'
+}
+
+function getSupportedRecorderMimeType() {
+  if (typeof window === 'undefined' || typeof window.MediaRecorder === 'undefined') {
+    return ''
+  }
+
+  const candidates = [
+    'audio/webm;codecs=opus',
+    'audio/webm',
+    'audio/mp4',
+    'audio/ogg;codecs=opus',
+    'audio/ogg'
+  ]
+
+  return candidates.find((type) => window.MediaRecorder.isTypeSupported(type)) || ''
+}
+
 function buildSubtitlePreview(text) {
   const value = String(text || '').trim()
   if (!value) {
-    return 'Mic on karte hi yahan live subtitle dikhne lagega.'
+    return 'Live subtitles will appear here as soon as you turn on the mic.'
   }
 
   if (value.length <= 180) {
@@ -127,16 +174,20 @@ export default function SpeechAnalysisSection({ onAnalysisComplete }) {
   const isListeningRef = useRef(false)
   const stopRequestedRef = useRef(false)
   const restartTimerRef = useRef(null)
+  const mediaRecorderRef = useRef(null)
+  const mediaStreamRef = useRef(null)
+  const transcriptionQueueRef = useRef(Promise.resolve())
 
   const [language, setLanguage] = useState('English')
   const [transcript, setTranscript] = useState('')
   const [liveSubtitle, setLiveSubtitle] = useState('')
   const [isListening, setIsListening] = useState(false)
+  const [isTranscribing, setIsTranscribing] = useState(false)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [analysis, setAnalysis] = useState(null)
   const [error, setError] = useState('')
 
-  const speechRecognitionSupported = Boolean(getSpeechRecognition())
+  const speechRecognitionSupported = Boolean(typeof navigator !== 'undefined' && navigator.mediaDevices?.getUserMedia && typeof window !== 'undefined' && typeof window.MediaRecorder !== 'undefined')
   const display = analysis || EMPTY_RESULT
 
   useEffect(() => {
@@ -155,99 +206,55 @@ export default function SpeechAnalysisSection({ onAnalysisComplete }) {
           // Ignore stop errors during teardown.
         }
       }
+
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        try {
+          mediaRecorderRef.current.stop()
+        } catch {
+          // Ignore stop errors during teardown.
+        }
+      }
+
+      if (mediaStreamRef.current) {
+        mediaStreamRef.current.getTracks().forEach((track) => track.stop())
+      }
     }
   }, [])
 
   const normalizeTranscript = (value) => String(value || '').replace(/\s+/g, ' ').trim()
 
-  const createRecognition = () => {
-    const SpeechRecognition = getSpeechRecognition()
-    if (!SpeechRecognition) {
-      return null
-    }
-
-    const recognition = new SpeechRecognition()
-    recognition.lang = LANGUAGE_CODES[language] || 'en-IN'
-    recognition.continuous = true
-    recognition.interimResults = true
-    recognition.maxAlternatives = 1
-
-    recognition.onstart = () => {
-      setError('')
-      setIsListening(true)
-      isListeningRef.current = true
-    }
-
-    recognition.onresult = (event) => {
-      let interimTranscript = ''
-      let finalChunk = ''
-
-      for (let index = event.resultIndex; index < event.results.length; index += 1) {
-        const result = event.results[index]
-        const text = String(result[0]?.transcript || '').trim()
-
-        if (!text) {
-          continue
+  const enqueueTranscription = (audioBlob) => {
+    transcriptionQueueRef.current = transcriptionQueueRef.current
+      .then(async () => {
+        if (!audioBlob || audioBlob.size === 0 || stopRequestedRef.current) {
+          return
         }
 
-        if (result.isFinal) {
-          finalChunk += `${text} `
-        } else {
-          interimTranscript += `${text} `
+        setIsTranscribing(true)
+
+        const languageCode = getTranscriptionLanguageCode(language)
+        const response = await apiClient.transcribe(audioBlob, languageCode)
+        const chunkText = String(response?.data?.data?.text || response?.data?.text || response?.data || '').trim()
+
+        if (chunkText) {
+          finalTranscriptRef.current = normalizeTranscript(`${finalTranscriptRef.current} ${chunkText}`)
+          setTranscript(finalTranscriptRef.current)
+          setLiveSubtitle(buildSubtitlePreview(chunkText))
         }
-      }
-
-      if (finalChunk) {
-        finalTranscriptRef.current = normalizeTranscript(`${finalTranscriptRef.current} ${finalChunk}`)
-      }
-
-      const snapshot = normalizeTranscript(`${finalTranscriptRef.current} ${interimTranscript}`)
-      setTranscript(snapshot)
-      setLiveSubtitle(interimTranscript.trim() || buildSubtitlePreview(snapshot))
-    }
-
-    recognition.onerror = (event) => {
-      const reason = String(event?.error || 'speech recognition error')
-
-      if (reason === 'no-speech') {
-        return
-      }
-
-      stopRequestedRef.current = true
-      isListeningRef.current = false
-      setIsListening(false)
-      setError(`Mic error: ${reason}. Browser speech recognition may need permission or a supported browser.`)
-    }
-
-    recognition.onend = () => {
-      isListeningRef.current = false
-      setIsListening(false)
-
-      if (stopRequestedRef.current) {
-        return
-      }
-
-      if (restartTimerRef.current) {
-        window.clearTimeout(restartTimerRef.current)
-      }
-
-      restartTimerRef.current = window.setTimeout(() => {
-        if (!isListeningRef.current && recognitionRef.current && !stopRequestedRef.current) {
-          try {
-            recognitionRef.current.start()
-          } catch {
-            // If restart is rejected, keep the current transcript and wait for manual restart.
-          }
-        }
-      }, 250)
-    }
-
-    return recognition
+      })
+      .catch((chunkError) => {
+        const message = chunkError?.response?.data?.message || chunkError?.message || 'Speech transcription failed.'
+        setError(message)
+        stopListening()
+      })
+      .finally(() => {
+        setIsTranscribing(false)
+      })
   }
 
   const startListening = () => {
     if (!speechRecognitionSupported) {
-      setError('This browser does not support live speech recognition.')
+      setError('This browser does not support microphone recording. Please use a modern browser with microphone access.')
       return
     }
 
@@ -263,16 +270,40 @@ export default function SpeechAnalysisSection({ onAnalysisComplete }) {
     setError('')
     setAnalysis(null)
 
-    const recognition = createRecognition()
-    if (!recognition) {
-      setError('Unable to start speech recognition in this browser.')
-      return
-    }
-
-    recognitionRef.current = recognition
-
     try {
-      recognition.start()
+      const supportedMimeType = getSupportedRecorderMimeType()
+      navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
+        if (stopRequestedRef.current) {
+          stream.getTracks().forEach((track) => track.stop())
+          return
+        }
+
+        mediaStreamRef.current = stream
+
+        const recorderOptions = supportedMimeType ? { mimeType: supportedMimeType } : undefined
+        const recorder = new MediaRecorder(stream, recorderOptions)
+        mediaRecorderRef.current = recorder
+
+        recorder.ondataavailable = (event) => {
+          if (event.data && event.data.size > 0) {
+            enqueueTranscription(event.data)
+          }
+        }
+
+        recorder.onstop = () => {
+          if (mediaStreamRef.current) {
+            mediaStreamRef.current.getTracks().forEach((track) => track.stop())
+          }
+        }
+
+        recorder.start(4000)
+        setIsListening(true)
+        isListeningRef.current = true
+        setLiveSubtitle('Listening... subtitles will appear as audio is transcribed.')
+      }).catch((permissionError) => {
+        const message = permissionError?.message || 'Microphone permission is required to start live subtitles.'
+        setError(message)
+      })
     } catch (startError) {
       setError(startError?.message || 'Could not start microphone capture.')
     }
@@ -282,17 +313,24 @@ export default function SpeechAnalysisSection({ onAnalysisComplete }) {
     stopRequestedRef.current = true
     isListeningRef.current = false
     setIsListening(false)
+    setIsTranscribing(false)
+    transcriptionQueueRef.current = Promise.resolve()
 
     if (restartTimerRef.current) {
       window.clearTimeout(restartTimerRef.current)
     }
 
-    if (recognitionRef.current) {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       try {
-        recognitionRef.current.stop()
+        mediaRecorderRef.current.stop()
       } catch {
-        // Ignore stop errors when the recognizer is already stopped.
+        // Ignore stop errors when the recorder is already stopped.
       }
+    }
+
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach((track) => track.stop())
+      mediaStreamRef.current = null
     }
   }
 
@@ -302,6 +340,7 @@ export default function SpeechAnalysisSection({ onAnalysisComplete }) {
     setTranscript('')
     setLiveSubtitle('')
     setAnalysis(null)
+    setIsTranscribing(false)
     setError('')
   }
 
@@ -309,7 +348,7 @@ export default function SpeechAnalysisSection({ onAnalysisComplete }) {
     const cleanedText = normalizeTranscript(transcript)
 
     if (cleanedText.length < 10 || isAnalyzing) {
-      setError('Speak at least a little longer before analyzing.')
+      setError('Please speak a little longer before analyzing.')
       return
     }
 
@@ -342,7 +381,7 @@ export default function SpeechAnalysisSection({ onAnalysisComplete }) {
         <p className="text-xs tracking-[0.28em] uppercase font-bold transition-colors duration-400" style={{ color: 'var(--color-primary)' }}>🎙️ Speech Analysis</p>
         <h1 className="mt-3 text-3xl md:text-4xl font-black transition-colors duration-400" style={{ color: 'var(--color-text)' }}>Live Subtitle Studio</h1>
         <p className="mt-2 text-sm transition-colors duration-400" style={{ color: 'var(--color-textMuted)' }}>
-          Mic on karo, live subtitle dekho, aur speech ko AI se clean karke structured lecture notes banao.
+          Record audio from the mic, get live subtitles from the backend, and turn the speech into structured lecture notes.
         </p>
       </header>
 
@@ -353,7 +392,7 @@ export default function SpeechAnalysisSection({ onAnalysisComplete }) {
               <div className="space-y-1">
                 <p className="text-sm font-bold transition-colors duration-400" style={{ color: 'var(--color-text)' }}>Microphone Control</p>
                 <p className="text-xs transition-colors duration-400" style={{ color: 'var(--color-textMuted)' }}>
-                  {speechRecognitionSupported ? 'Supported in Chromium-based browsers and some desktop browsers.' : 'Live speech recognition is not supported in this browser.'}
+                  {speechRecognitionSupported ? 'Audio is recorded locally and transcribed by the backend in near real time.' : 'This browser does not support microphone recording.'}
                 </p>
               </div>
 
@@ -406,7 +445,7 @@ export default function SpeechAnalysisSection({ onAnalysisComplete }) {
             </div>
 
             <div className="mt-5 rounded-xl border px-4 py-3 text-sm font-semibold transition-colors duration-400" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-bg)', color: isListening ? 'var(--color-success)' : 'var(--color-textMuted)' }}>
-              {isListening ? '● Listening live' : 'Mic idle'}
+              {isListening ? (isTranscribing ? '● Listening live • Transcribing audio' : '● Listening live') : 'Mic idle'}
             </div>
 
             {error && (
@@ -420,7 +459,7 @@ export default function SpeechAnalysisSection({ onAnalysisComplete }) {
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-sm font-bold transition-colors duration-400" style={{ color: 'var(--color-text)' }}>Live Subtitle</p>
-                <p className="text-xs transition-colors duration-400" style={{ color: 'var(--color-textMuted)' }}>Real-time speech recognition output</p>
+                <p className="text-xs transition-colors duration-400" style={{ color: 'var(--color-textMuted)' }}>Real-time speech transcription output</p>
               </div>
               <span className="rounded-full border px-3 py-1 text-xs font-bold transition-colors duration-400" style={{ borderColor: 'var(--color-border)', color: 'var(--color-primary)' }}>
                 {language}
@@ -435,7 +474,7 @@ export default function SpeechAnalysisSection({ onAnalysisComplete }) {
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-sm font-bold transition-colors duration-400" style={{ color: 'var(--color-text)' }}>Captured Transcript</p>
-                <p className="text-xs transition-colors duration-400" style={{ color: 'var(--color-textMuted)' }}>Edit the spoken text before sending it to AI</p>
+                <p className="text-xs transition-colors duration-400" style={{ color: 'var(--color-textMuted)' }}>Edit the transcribed text before sending it to AI</p>
               </div>
               <span className="text-xs font-semibold transition-colors duration-400" style={{ color: 'var(--color-textMuted)' }}>{transcript.length} chars</span>
             </div>
@@ -460,7 +499,7 @@ export default function SpeechAnalysisSection({ onAnalysisComplete }) {
 
             {!analysis ? (
               <div className="mt-4 rounded-2xl border px-4 py-4 text-sm transition-colors duration-400" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-bg)', color: 'var(--color-textMuted)' }}>
-                Mic se transcript capture karo, phir AI Filter & Analyze dabao. Yahan summary, topics, action items aur feedback aayenge.
+                Record with the mic, then click AI Filter & Analyze. Summary, topics, action items, and feedback will appear here.
               </div>
             ) : (
               <div className="mt-4 space-y-4">
@@ -513,9 +552,9 @@ export default function SpeechAnalysisSection({ onAnalysisComplete }) {
           <div className="rounded-2xl border p-5 transition-colors duration-400" style={{ backgroundColor: 'var(--color-bgSecondary)', borderColor: 'var(--color-border)' }}>
             <p className="text-sm font-bold transition-colors duration-400" style={{ color: 'var(--color-text)' }}>How it works</p>
             <div className="mt-3 space-y-2 text-sm leading-6 transition-colors duration-400" style={{ color: 'var(--color-textMuted)' }}>
-              <p>1. Mic start karo aur bolna shuru karo.</p>
-              <p>2. Live subtitle realtime me yahan dikhega.</p>
-              <p>3. AI Filter & Analyze se transcript clean hoke structured lecture insights ban jayenge.</p>
+              <p>1. Turn on the mic and start speaking.</p>
+              <p>2. Audio chunks are sent to the backend and subtitles update as each chunk is transcribed.</p>
+              <p>3. AI Filter & Analyze will clean the transcript and turn it into structured lecture insights.</p>
             </div>
           </div>
         </div>

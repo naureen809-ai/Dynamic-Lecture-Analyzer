@@ -4,7 +4,7 @@ const dotenv = require('dotenv');
 const mongoose = require('mongoose');
 const PDFDocument = require('pdfkit');
 const connectDB = require('./config/db');
-const { analyzeLectureText, chatWithLectureAssistant, generateTopicMcqs } = require('./services/aiService');
+const { analyzeLectureText, chatWithLectureAssistant, generateTopicMcqs, transcribeAudioChunk } = require('./services/aiService');
 
 dotenv.config();
 
@@ -59,6 +59,7 @@ const corsOptions = {
 const lectureHistorySchema = new mongoose.Schema(
   {
     input_text: { type: String, required: true, trim: true },
+    lecture_title: { type: String, default: '' },
     language: { type: String, default: 'English' },
     ai_output: {
       summary: { type: String, required: true },
@@ -119,6 +120,18 @@ const normalizeLanguage = (language) => {
   return ALLOWED_LANGUAGES.has(value) ? value : 'English';
 };
 
+const buildLectureTitle = (text) => {
+  const cleanText = String(text || '').replace(/\s+/g, ' ').trim();
+  if (!cleanText) return 'Untitled Lecture';
+
+  const firstSentence = cleanText.split(/(?<=[.!?])\s+/)[0] || cleanText;
+  const title = firstSentence.length > 80
+    ? firstSentence.split(' ').slice(0, 8).join(' ')
+    : firstSentence;
+
+  return title.replace(/^[a-z]/, (char) => char.toUpperCase());
+};
+
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 const parseLimit = (value, fallback = 20, max = 100) => {
@@ -160,6 +173,39 @@ app.get('/health', (req, res) => {
   res.json({ ok: true, service: 'dynamic-lecture-analyzer-backend' });
 });
 
+app.post('/api/transcribe', express.raw({ type: () => true, limit: '25mb' }), async (req, res) => {
+  try {
+    const language = String(req.query?.language || 'en').trim() || 'en';
+    const mimeType = String(req.headers['content-type'] || 'audio/webm').split(';')[0] || 'audio/webm';
+    const audioBuffer = Buffer.isBuffer(req.body) ? req.body : Buffer.from(req.body || []);
+
+    if (!audioBuffer.length) {
+      return res.status(400).json({
+        success: false,
+        message: 'audio chunk is required'
+      });
+    }
+
+    const result = await transcribeAudioChunk({
+      audioBuffer,
+      mimeType,
+      language,
+      filename: mimeType.includes('mp4') ? 'speech.mp4' : 'speech.webm'
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: result
+    });
+  } catch (error) {
+    console.error('Transcribe route error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to transcribe audio'
+    });
+  }
+});
+
 app.post('/api/analyze', async (req, res) => {
   try {
     const rawText = req.body?.text;
@@ -173,6 +219,7 @@ app.post('/api/analyze', async (req, res) => {
     }
 
     const text = rawText.trim();
+    const lectureTitle = buildLectureTitle(text);
 
     if (!text) {
       return res.status(400).json({
@@ -199,6 +246,7 @@ app.post('/api/analyze', async (req, res) => {
 
     const saved = await LectureHistory.create({
       input_text: text,
+      lecture_title: lectureTitle,
       language,
       ai_output: {
         ...aiOutput
@@ -248,6 +296,7 @@ app.post('/api/analyze', async (req, res) => {
       data: {
         id: saved._id,
         input_text: saved.input_text,
+        lecture_title: saved.lecture_title || lectureTitle,
         language: saved.language,
         ai_output: saved.ai_output,
         timestamp: saved.timestamp
@@ -343,7 +392,10 @@ app.get('/api/history', async (req, res) => {
     return res.status(200).json({
       success: true,
       count: history.length,
-      data: history
+      data: history.map((entry) => ({
+        ...entry,
+        lecture_title: entry.lecture_title || buildLectureTitle(entry.input_text)
+      }))
     });
   } catch (error) {
     console.error('History route error:', error);
@@ -431,6 +483,7 @@ app.get('/api/search', async (req, res) => {
         id: entry._id,
         timestamp: entry.timestamp,
         language: entry.language || 'English',
+        lecture_title: entry.lecture_title || buildLectureTitle(entry.input_text),
         summary: entry.ai_output?.summary || '',
         input_text: entry.input_text || '',
         keywords: flattenKeywords(entry)

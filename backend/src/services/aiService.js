@@ -713,8 +713,8 @@ STRICT RULES:
 - Each MCQ must have exactly 4 options.
 - Provide the correct answer as the full option text (not A/B/C/D).
 - Provide a short explanation for the correct answer (1-2 sentences).
-- Tag each question with a `type` field (one of: definition, application, scenario, comparison, relation, reasoning) and a `difficulty` field (Easy, Medium, Hard).
-- Ensure variety: mix question types and difficulties. For small counts, avoid repeating the same `type` more than twice.
+- Tag each question with a type field (one of: definition, application, scenario, comparison, relation, reasoning) and a difficulty field (Easy, Medium, Hard).
+- Ensure variety: mix question types and difficulties. For small counts, avoid repeating the same type more than twice.
 - Vary phrasing and distractors: avoid repeating option patterns; include plausible distractors that test common misconceptions.
 - Use ${safeLanguage} for all text, options, answers, and explanations.
 
@@ -734,7 +734,7 @@ OUTPUT JSON SCHEMA (exact):
   }
 }
 
-IMPORTANT: Do not include any extraneous keys at the root. Return only the JSON object above (you may wrap in ```json ... ``` but prefer raw JSON).
+IMPORTANT: Do not include any extraneous keys at the root. Return only the JSON object above (you may wrap in a json code block, but prefer raw JSON).
 `
         },
         {
@@ -742,7 +742,7 @@ IMPORTANT: Do not include any extraneous keys at the root. Return only the JSON 
           content: [
             `Topic: ${cleanTopic}`,
             `Number of questions requested: ${requestedCount}`,
-            'Instruction: Produce a balanced set of MCQs that cover definitions, applications, scenarios, and conceptual distinctions where relevant. Label each item with `type` and `difficulty` and ensure varied distractors.'
+            'Instruction: Produce a balanced set of MCQs that cover definitions, applications, scenarios, and conceptual distinctions where relevant. Label each item with type and difficulty and ensure varied distractors.'
           ].join('\n')
         }
       ]
@@ -991,16 +991,17 @@ Do NOT use general knowledge or external information.
 
 STRICT RULES:
 1. LECTURE CONTENT ONLY - Answer ONLY using the provided lecture content
-2. If the question is not covered in the lecture, respond EXACTLY: "📚 یہ موضوع فراہم کردہ لیکچر میں نہیں ہے" (in user's language: "This is not covered in the provided lecture")
-3. Support languages: English, Hindi, Hinglish, Marathi, Bengali, Tamil, and all Indian languages
-4. Reply in the SAME language as the user's question
-5. Keep answers simple, clear, educational, and beginner-friendly
-6. REJECT non-educational questions with: "📚 میں صرف لیکچر سے متعلقہ سوالات کا جواب دے سکتا ہوں" (in user's language)
+2. If the question is not covered in the lecture, respond EXACTLY: "This topic is not covered in the provided lecture content."
+3. Support the user's language only when it is explicitly requested, but default to English.
+4. If the user asks in English, reply in English only.
+5. Do not use Urdu unless the user explicitly asks for Urdu.
+6. Keep answers simple, clear, educational, and beginner-friendly.
+7. Reject non-educational questions with: "I can only help with questions about the lecture content."
 
 ANSWER APPROACH:
 - Look at the lecture content provided
 - If the answer is in the lecture → Answer clearly with lecture information
-- If the answer is NOT in the lecture → Say "This is not covered in the provided lecture"
+- If the answer is NOT in the lecture → Say "This topic is not covered in the provided lecture content."
 - DO NOT make up information or use general knowledge
 - DO NOT answer non-educational questions
 - Explain in very easy words, like teaching a beginner
@@ -1045,8 +1046,69 @@ Remember: You are ONLY a lecture assistant. Only answer what is in the lecture.
   }
 };
 
+const transcribeAudioChunk = async ({
+  audioBuffer,
+  mimeType = 'audio/webm',
+  language = 'en',
+  filename = 'speech.webm'
+}) => {
+  const inputBuffer = Buffer.isBuffer(audioBuffer) ? audioBuffer : Buffer.from(audioBuffer || []);
+  if (!inputBuffer.length) {
+    throw new Error('audioBuffer is required');
+  }
+
+  const groq = getGroqClient();
+  const openai = getOpenAIClient();
+
+  if (!groq && !openai) {
+    throw new Error('Speech transcription is unavailable because no AI provider is configured.');
+  }
+
+  const AudioFile = globalThis.File;
+  if (typeof AudioFile !== 'function') {
+    throw new Error('This server environment does not support audio file uploads.');
+  }
+
+  const file = new AudioFile([inputBuffer], filename, { type: mimeType });
+
+  try {
+    if (groq) {
+      const response = await groq.audio.transcriptions.create({
+        file,
+        model: process.env.GROQ_TRANSCRIBE_MODEL || 'whisper-large-v3-turbo',
+        language,
+        response_format: 'json',
+        temperature: 0
+      });
+
+      return {
+        text: String(response?.text || '').trim(),
+        provider: 'groq',
+        model: process.env.GROQ_TRANSCRIBE_MODEL || 'whisper-large-v3-turbo'
+      };
+    }
+
+    const response = await openai.audio.transcriptions.create({
+      file,
+      model: process.env.OPENAI_TRANSCRIBE_MODEL || 'whisper-1',
+      language,
+      response_format: 'json',
+      temperature: 0
+    });
+
+    return {
+      text: String(response?.text || '').trim(),
+      provider: 'openai',
+      model: process.env.OPENAI_TRANSCRIBE_MODEL || 'whisper-1'
+    };
+  } catch (error) {
+    throw new Error(error?.message || 'Failed to transcribe audio');
+  }
+};
+
 module.exports = {
   analyzeLectureText,
   chatWithLectureAssistant,
-  generateTopicMcqs
+  generateTopicMcqs,
+  transcribeAudioChunk
 };

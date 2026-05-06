@@ -1,5 +1,17 @@
 import React from 'react'
 
+function deriveLectureTitle(result) {
+  const explicitTitle = String(result?.lecture_title || '').trim()
+  if (explicitTitle) return explicitTitle
+
+  const source = String(result?.input_text || result?.summary || '').replace(/\s+/g, ' ').trim()
+  if (!source) return 'Untitled Lecture'
+
+  const firstSentence = source.split(/(?<=[.!?])\s+/)[0] || source
+  const title = firstSentence.length > 80 ? firstSentence.split(' ').slice(0, 8).join(' ') : firstSentence
+  return title.replace(/^[a-z]/, (char) => char.toUpperCase())
+}
+
 function SectionBlock({ title, children, aside }) {
   return (
     <section
@@ -75,8 +87,53 @@ function QuestionList({ items, emptyText }) {
   )
 }
 
+function TopicExplanation({ result }) {
+  const headings = result.notes?.headings || []
+  const topics = result.topics || []
+
+  if (!headings.length && !topics.length) {
+    return <p style={{ color: 'var(--color-textMuted)' }}>No topic explanations available.</p>
+  }
+
+  if (headings.length) {
+    return (
+      <div className="space-y-4">
+        {headings.map((heading, idx) => (
+          <div key={`${heading?.title || 'heading'}-${idx}`} className="rounded-2xl border p-5" style={{ backgroundColor: 'var(--color-bg)', borderColor: 'var(--color-border)' }}>
+            <p className="text-sm font-bold" style={{ color: 'var(--color-text)' }}>{heading?.title || `Topic ${idx + 1}`}</p>
+            {Array.isArray(heading?.points) && heading.points.length ? (
+              <ul className="mt-3 space-y-2 text-sm leading-6" style={{ color: 'var(--color-textSecondary)' }}>
+                {heading.points.map((point, pointIndex) => <li key={`${point}-${pointIndex}`}>• {point}</li>)}
+              </ul>
+            ) : null}
+            {Array.isArray(heading?.important_lines) && heading.important_lines.length ? (
+              <div className="mt-4 rounded-xl border px-4 py-3 text-sm" style={{ backgroundColor: 'var(--color-bgSecondary)', borderColor: 'var(--color-border)', color: 'var(--color-textMuted)' }}>
+                <p className="font-semibold" style={{ color: 'var(--color-text)' }}>Important lines</p>
+                <ul className="mt-2 space-y-1">
+                  {heading.important_lines.map((line, lineIndex) => <li key={`${line}-${lineIndex}`}>• {line}</li>)}
+                </ul>
+              </div>
+            ) : null}
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      {topics.map((topic, idx) => (
+        <span key={`${topic}-${idx}`} className="rounded-full border px-3 py-1 text-xs font-semibold" style={{ borderColor: 'var(--color-primary)40', backgroundColor: 'var(--color-primary)15', color: 'var(--color-primary)' }}>
+          {topic}
+        </span>
+      ))}
+    </div>
+  )
+}
+
 export default function ReportsSection({ analysisResult, onCopy, copied, onExportPdf, exportId }) {
   const result = analysisResult || {}
+  const lectureTitle = deriveLectureTitle(result)
   const summaryText = result.summary || 'No summary available.'
   const topicCount = result.topics?.length || 0
   const actionCount = result.action_items?.length || 0
@@ -86,6 +143,7 @@ export default function ReportsSection({ analysisResult, onCopy, copied, onExpor
   const mcqCount = result.questions?.mcqs?.length || 0
 
   const reportText = [
+    lectureTitle,
     result.summary,
     ...(result.topics || []),
     ...(result.action_items || []),
@@ -106,8 +164,9 @@ export default function ReportsSection({ analysisResult, onCopy, copied, onExpor
           <p className="text-xs uppercase tracking-[0.35em] font-bold" style={{ color: 'var(--color-primary)' }}>Reports</p>
           <h1 className="mt-3 text-3xl md:text-5xl font-black tracking-tight" style={{ color: 'var(--color-text)' }}>Full Lecture Report</h1>
           <p className="mt-3 max-w-3xl text-sm md:text-base leading-7" style={{ color: 'var(--color-textMuted)' }}>
-            A polished final report with summary, study actions, questions, and key takeaways ready for revision or export.
+            A polished lecture report with topic-by-topic explanation, study actions, questions, and key takeaways ready for revision or export.
           </p>
+          <p className="mt-4 text-lg font-bold" style={{ color: 'var(--color-text)' }}>{lectureTitle}</p>
         </div>
         <div className="flex flex-wrap gap-3">
           <button
@@ -149,12 +208,8 @@ export default function ReportsSection({ analysisResult, onCopy, copied, onExpor
             <p className="text-base leading-7" style={{ color: 'var(--color-text)' }}>{summaryText}</p>
           </SectionBlock>
 
-          <SectionBlock title="Topics" aside={`${topicCount} identified`}>
-            {result.topics?.length ? (
-              <BadgeList items={result.topics} />
-            ) : (
-              <p style={{ color: 'var(--color-textMuted)' }}>No topics identified.</p>
-            )}
+          <SectionBlock title="Detailed Explanation" aside={`${topicCount} topics covered`}>
+            <TopicExplanation result={result} />
           </SectionBlock>
 
           <SectionBlock title="Action Plan" aside={`${actionCount} steps`}>

@@ -1,6 +1,51 @@
 import React, { useState } from 'react'
 import apiClient from '../api/apiClient'
 
+const EMPTY_RESULT = {
+  summary: '',
+  topics: [],
+  action_items: [],
+  keywords: [],
+  speaker_feedback: '',
+  notes: {
+    headings: [],
+    short_notes: [],
+    detailed_notes: [],
+    timestamps: []
+  },
+  questions: {
+    mcqs: [],
+    short_questions: [],
+    viva_questions: []
+  },
+  segmentation: []
+}
+
+function normalizeAnalysis(payload) {
+  const safe = payload || {}
+
+  return {
+    summary: String(safe.summary || '').trim(),
+    topics: Array.isArray(safe.topics) ? safe.topics.filter(Boolean) : [],
+    action_items: Array.isArray(safe.action_items) ? safe.action_items.filter(Boolean) : [],
+    keywords: Array.isArray(safe.keywords) ? safe.keywords.filter(Boolean) : [],
+    speaker_feedback: String(safe.speaker_feedback || '').trim(),
+    notes: {
+      headings: Array.isArray(safe.notes?.headings) ? safe.notes.headings : [],
+      short_notes: Array.isArray(safe.notes?.short_notes) ? safe.notes.short_notes : [],
+      detailed_notes: Array.isArray(safe.notes?.detailed_notes) ? safe.notes.detailed_notes : [],
+      timestamps: Array.isArray(safe.notes?.timestamps) ? safe.notes.timestamps : []
+    },
+    questions: {
+      mcqs: Array.isArray(safe.questions?.mcqs) ? safe.questions.mcqs : [],
+      short_questions: Array.isArray(safe.questions?.short_questions) ? safe.questions.short_questions : [],
+      viva_questions: Array.isArray(safe.questions?.viva_questions) ? safe.questions.viva_questions : []
+    },
+    segmentation: Array.isArray(safe.segmentation) ? safe.segmentation : [],
+    id: safe.id || safe._id || safe.document_id || safe.documentId || null
+  }
+}
+
 export default function AIAnalysisSection({ analysisResult, onAnalysisComplete }) {
   const [input, setText] = useState('')
   const [language, setLanguage] = useState('English')
@@ -27,8 +72,9 @@ export default function AIAnalysisSection({ analysisResult, onAnalysisComplete }
     try {
       const res = await apiClient.analyze(input.trim(), language)
       const data = res?.data?.data?.ai_output || res?.data?.data || res?.data || {}
-      setResult(data)
-      onAnalysisComplete?.(data)
+      const normalized = normalizeAnalysis(data)
+      setResult(normalized)
+      onAnalysisComplete?.(normalized)
     } catch (err) {
       const message = err?.response?.data?.message || err?.message || 'Analysis failed'
       setError(message)
@@ -138,6 +184,13 @@ export default function AIAnalysisSection({ analysisResult, onAnalysisComplete }
                   <p style={{ color: 'var(--color-textMuted)' }}>No action items found</p>
                 )}
               </ol>
+            </div>
+
+            <div className="rounded-xl border p-6 transition-colors duration-400" style={{ backgroundColor: 'var(--color-bgSecondary)', borderColor: 'var(--color-border)' }}>
+              <h3 className="text-lg font-bold mb-3 transition-colors duration-400" style={{ color: 'var(--color-primary)' }}>💡 Result Status</h3>
+              <p className="text-sm leading-6 transition-colors duration-400" style={{ color: 'var(--color-text)' }}>
+                {result.summary ? 'Analysis completed successfully.' : 'Analysis returned an empty summary. Please try with longer lecture content.'}
+              </p>
             </div>
           </div>
         )}

@@ -30,6 +30,12 @@ client.interceptors.response.use(
 
 export default {
   analyze: (text, language = 'English') => client.post('/api/analyze', { text, language }),
+  transcribe: (audioBlob, language = 'en') =>
+    client.post('/api/transcribe?language=' + encodeURIComponent(language), audioBlob, {
+      headers: {
+        'Content-Type': audioBlob?.type || 'audio/webm'
+      }
+    }),
   history: (limit = 10) => client.get('/api/history', { params: { limit } }),
   chat: ({ message, context_text, language = 'English', history = [] }) =>
     client.post('/api/chat', { message, context_text, language, history }),
