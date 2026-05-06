@@ -31,8 +31,21 @@ client.interceptors.response.use(
 export default {
   analyze: (text, language = 'English') => client.post('/api/analyze', { text, language }),
   transcribe: (audioBlob, language = 'en') => {
+    const mimeType = String(audioBlob?.type || '').toLowerCase()
+    let extension = 'webm'
+
+    if (mimeType.includes('mp4') || mimeType.includes('m4a')) {
+      extension = 'mp4'
+    } else if (mimeType.includes('ogg')) {
+      extension = 'ogg'
+    } else if (mimeType.includes('wav') || mimeType.includes('wave')) {
+      extension = 'wav'
+    } else if (mimeType.includes('mpeg') || mimeType.includes('mp3')) {
+      extension = 'mp3'
+    }
+
     const formData = new FormData()
-    formData.append('audio', audioBlob, 'audio.webm')
+    formData.append('audio', audioBlob, `audio.${extension}`)
     return client.post('/api/transcribe?language=' + encodeURIComponent(language), formData)
   },
   history: (limit = 10) => client.get('/api/history', { params: { limit } }),

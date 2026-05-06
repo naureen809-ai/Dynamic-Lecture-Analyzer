@@ -23,24 +23,23 @@ const topNavItems = [
 
 function TopBar({ activeSection, onNavigate }) {
   const { currentTheme, toggleTheme, themes } = useTheme()
-  const themeNames = Object.keys(themes)
   
   return (
-    <header className="sticky top-0 z-40 md:ml-[280px] ml-0 h-20 flex items-center justify-between px-8 transition-colors duration-400" style={{ backgroundColor: 'var(--color-bg)', borderColor: 'var(--color-border)', borderBottom: '1px solid var(--color-border)', backdropFilter: 'blur(12px)' }}>
+    <header className="sticky top-0 z-40 md:ml-[280px] ml-0 h-20 flex items-center justify-between px-8 transition-colors duration-400" style={{ backgroundColor: 'color-mix(in srgb, var(--color-bg) 86%, #ffffff 14%)', borderColor: 'var(--color-border)', borderBottom: '1px solid var(--color-border)', backdropFilter: 'blur(10px)' }}>
       <div className="flex items-center gap-8">
         <div>
-          <h1 className="text-2xl font-black tracking-tight transition-colors duration-400" style={{ color: 'var(--color-text)' }}>Lecture Analytics</h1>
+          <h1 className="text-2xl md:text-[2rem] font-bold tracking-tight transition-colors duration-400" style={{ color: 'var(--color-text)' }}>Lecture Analytics</h1>
         </div>
-        <nav className="hidden sm:flex flex-wrap gap-4">
+        <nav className="hidden sm:flex flex-wrap gap-2 rounded-2xl border p-1.5" style={{ borderColor: 'var(--color-border)', backgroundColor: 'color-mix(in srgb, var(--color-bgSecondary) 84%, #ffffff 16%)' }}>
           {topNavItems.map((item) => (
             <button
               key={item.id}
               type="button"
               onClick={() => onNavigate(item.id)}
-              className="text-xs uppercase tracking-widest font-bold transition-all duration-300 pb-1 border-b-2"
+              className="px-3 py-1.5 text-xs uppercase tracking-[0.16em] font-bold rounded-xl transition-all duration-300"
               style={{
-                color: activeSection === item.id ? 'var(--color-primary)' : 'var(--color-textMuted)',
-                borderColor: activeSection === item.id ? 'var(--color-primary)' : 'transparent'
+                color: activeSection === item.id ? 'var(--color-text)' : 'var(--color-textMuted)',
+                backgroundColor: activeSection === item.id ? 'var(--color-primary)' : 'transparent'
               }}
             >
               {item.label}
@@ -52,16 +51,16 @@ function TopBar({ activeSection, onNavigate }) {
         <button
           onClick={toggleTheme}
           type="button"
-          className="px-4 py-2 rounded-xl transition-all duration-300 text-xs uppercase font-bold tracking-wider border"
+          className="px-4 py-2 rounded-xl transition-all duration-300 text-xs uppercase font-bold tracking-[0.16em] border"
           title={`Theme: ${themes && themes[currentTheme] ? themes[currentTheme].name : 'Dark'}`}
           style={{
-            backgroundColor: `var(--color-bgSecondary)`,
+            backgroundColor: `color-mix(in srgb, var(--color-bgSecondary) 86%, #ffffff 14%)`,
             color: `var(--color-text)`,
             borderColor: `var(--color-border)`
           }}
         >
           <span className="inline-block capitalize">{themes && themes[currentTheme] ? themes[currentTheme].name : 'Dark'}</span>
-          <span className="ml-2 text-base">⚡</span>
+          <span className="ml-2 text-base">•</span>
         </button>
       </div>
     </header>
@@ -327,7 +326,6 @@ export default function App() {
                   <SpeechAnalysisSection
                     onAnalysisComplete={(result) => {
                       setAnalysisResult(normalizePayload(result))
-                      setActiveSection('dashboard')
                     }}
                   />
                 )}

@@ -151,6 +151,28 @@ const flattenKeywords = (entry) => {
     .slice(0, 16);
 };
 
+const getAudioFilenameByMimeType = (mimeType) => {
+  const value = String(mimeType || '').toLowerCase();
+
+  if (value.includes('mp4') || value.includes('m4a')) {
+    return 'speech.mp4';
+  }
+
+  if (value.includes('ogg')) {
+    return 'speech.ogg';
+  }
+
+  if (value.includes('wav') || value.includes('wave')) {
+    return 'speech.wav';
+  }
+
+  if (value.includes('mpeg') || value.includes('mp3')) {
+    return 'speech.mp3';
+  }
+
+  return 'speech.webm';
+};
+
 connectDB();
 
 app.use(cors(corsOptions));
@@ -204,7 +226,7 @@ app.post('/api/transcribe', async (req, res) => {
       audioBuffer,
       mimeType,
       language,
-      filename: mimeType.includes('mp4') ? 'speech.mp4' : 'speech.webm'
+      filename: getAudioFilenameByMimeType(mimeType)
     });
 
     return res.status(200).json({

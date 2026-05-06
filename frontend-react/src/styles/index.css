@@ -1,27 +1,31 @@
 
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root{
-  --bg-1: #020617;
-  --panel: rgba(15, 23, 42, 0.5);
-  --accent: #38bdf8;
-  --sidebar: rgba(2, 6, 23, 0.8);
-  --card: rgba(15, 23, 42, 0.85);
-  --muted: #94a3b8;
+  --bg-1: #0f1720;
+  --panel: rgba(22, 28, 36, 0.64);
+  --accent: #1d8f84;
+  --sidebar: rgba(18, 24, 31, 0.9);
+  --card: rgba(26, 33, 42, 0.9);
+  --muted: #9ca9b8;
+  --font-ui: 'Plus Jakarta Sans', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-display: 'Fraunces', Georgia, Cambria, 'Times New Roman', serif;
 
   /* Theme Colors - Default Dark */
-  --color-bg: #0f172a;
-  --color-bgSecondary: #1e293b;
-  --color-bgTertiary: #334155;
-  --color-text: #ffffff;
-  --color-textSecondary: #cbd5e1;
-  --color-textMuted: #94a3b8;
+  --color-bg: #111823;
+  --color-bgSecondary: #1b2430;
+  --color-bgTertiary: #263140;
+  --color-text: #eff4fa;
+  --color-textSecondary: #cad5e2;
+  --color-textMuted: #98a7b7;
   --color-border: rgba(255, 255, 255, 0.08);
-  --color-primary: #06b6d4;
-  --color-primaryLight: #0ea5e9;
-  --color-secondary: #ec4899;
+  --color-primary: #1d8f84;
+  --color-primaryLight: #2ea79b;
+  --color-secondary: #d97745;
   --color-success: #10b981;
   --color-danger: #ef4444;
   --color-warning: #f59e0b;
@@ -51,7 +55,7 @@
 
 html, body, #root {
   height: 100%;
-  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+  font-family: var(--font-ui);
   background-color: var(--color-bg);
   color: var(--color-text);
   transition: background-color 0.4s ease, color 0.4s ease;
@@ -69,6 +73,10 @@ body {
   background-color: var(--color-bg);
   color: var(--color-text);
   transition: background-color 0.4s ease, color 0.4s ease;
+  background-image:
+    radial-gradient(1300px 450px at -10% -20%, rgba(46, 167, 155, 0.14), transparent 60%),
+    radial-gradient(900px 350px at 110% 0%, rgba(217, 119, 69, 0.1), transparent 56%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.015), rgba(0, 0, 0, 0.02));
 }
 
 * {
@@ -92,7 +100,7 @@ body {
   background-color: var(--color-bgSecondary);
   border-radius: 14px;
   border: 1px solid var(--color-border);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 20px rgba(5, 8, 15, 0.28);
   transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
@@ -100,7 +108,7 @@ body {
   background-color: var(--color-bgTertiary);
   border-radius: 14px;
   border: 1px solid var(--color-border);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 6px 16px rgba(5, 8, 15, 0.24);
   transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
@@ -115,15 +123,24 @@ body {
 }
 
 .glass-panel {
-  background-color: var(--color-bgSecondary);
-  backdrop-filter: blur(12px);
+  background-color: color-mix(in srgb, var(--color-bgSecondary) 92%, #ffffff 8%);
+  backdrop-filter: blur(8px);
   border: 1px solid var(--color-border);
   transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .neon-glow-cyan {
-  box-shadow: 0 0 20px var(--color-primary);
+  box-shadow: 0 12px 30px rgba(6, 14, 25, 0.28);
   transition: box-shadow 0.3s ease;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+}
+
+button {
+  font-family: var(--font-ui);
 }
 
 .chat-scroll::-webkit-scrollbar { width: 4px; }

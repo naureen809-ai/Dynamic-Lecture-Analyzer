@@ -243,7 +243,15 @@ export default function SpeechAnalysisSection({ onAnalysisComplete }) {
         }
       })
       .catch((chunkError) => {
-        const message = chunkError?.response?.data?.message || chunkError?.message || 'Speech transcription failed.'
+        const status = chunkError?.response?.status
+        const message = String(chunkError?.response?.data?.message || chunkError?.message || 'Speech transcription failed.').trim()
+        const recoverableMediaError = status === 400 && /valid media file|could not process file|audio chunk is required/i.test(message)
+
+        if (recoverableMediaError) {
+          setError('Some audio chunks were not readable. Continuing live capture...')
+          return
+        }
+
         setError(message)
         stopListening()
       })
